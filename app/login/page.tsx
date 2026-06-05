@@ -1,8 +1,7 @@
 "use client"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff, KeyRound, Lock } from "lucide-react"
+import { Eye, EyeOff, KeyRound, Lock, Sun, Moon, Languages, Users, ShieldCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useAppContext } from "@/lib/context"
 import Logo from "@/components/Logo"
@@ -10,203 +9,229 @@ import Logo from "@/components/Logo"
 export default function LoginPage() {
   const router = useRouter()
   const { setUser } = useAppContext()
-  const [tab, setTab] = useState<"partner" | "admin">("partner")
+  const [tab,  setTab]  = useState<"user"|"admin">("user")
   const [code, setCode] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPass, setShowPass] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [pass, setPass] = useState("")
+  const [show, setShow] = useState(false)
+  const [load, setLoad] = useState(false)
+  const [err,  setErr]  = useState("")
+  const [dark, setDark] = useState(true)
+  const [lang, setLang] = useState<"ar"|"en">("ar")
 
-  const handleLogin = async () => {
-    if (!code.trim() || !password.trim()) {
-      setError("يرجى إدخال رمز الدخول وكلمة المرور")
-      return
-    }
-    setLoading(true)
-    setError("")
-    const supabase = createClient()
-    const { data, error: dbErr } = await supabase
-      .from("users")
-      .select("*")
-      .eq("code", code.trim())
-      .eq("password", password.trim())
-      .single()
+  const isAdmin = tab === "admin"
+  const dir     = lang === "ar" ? "rtl" : "ltr"
+  const bg      = dark ? "#06060f" : "#f0f0f8"
+  const card    = dark ? "#0d0d1a" : "#ffffff"
+  const bord    = dark ? "#1a1a2e" : "#dde0f0"
+  const inp     = dark ? "#11111f" : "#f5f5fc"
+  const text    = dark ? "#eeeef8" : "#0d0d1a"
+  const sub     = dark ? "#6666aa" : "#7777aa"
+  const muted   = dark ? "#333355" : "#c0c0dd"
+  const accent  = isAdmin ? "#a78bfa" : "#f59e0b"
+  const acc2    = isAdmin ? "#7c3aed" : "#f97316"
+  const glow    = isAdmin ? "rgba(167,139,250,0.18)" : "rgba(245,158,11,0.18)"
 
-    setLoading(false)
-    if (dbErr || !data) {
-      setError("بيانات غير صحيحة، تحقق من الرمز وكلمة المرور")
-      return
-    }
+  const T = lang === "ar" ? {
+    code:"رمز الدخول", codePh:"أدخل رمزك",
+    pass:"كلمة المرور", passPh:"كلمة المرور",
+    forgot:"نسيت كلمة المرور؟", btn:"دخول", loading:"جارٍ...",
+    noAcc:"ليس لديك حساب؟", reg:"سجّل الآن",
+    tabUser:"شريك / مستثمر", tabAdmin:"مدير النظام",
+    subUser:"للشركاء والمستثمرين", subAdmin:"للمديرين فقط",
+    e1:"أدخل الرمز وكلمة المرور", e2:"بيانات غير صحيحة",
+    e3:"ليس حساب مدير", e4:"استخدم تبويب المدير",
+  } : {
+    code:"Access Code", codePh:"Enter your code",
+    pass:"Password", passPh:"Your password",
+    forgot:"Forgot password?", btn:"Sign In", loading:"Loading...",
+    noAcc:"No account?", reg:"Register",
+    tabUser:"Partner / Investor", tabAdmin:"System Admin",
+    subUser:"For partners & investors", subAdmin:"For admins only",
+    e1:"Enter code and password", e2:"Invalid credentials",
+    e3:"Not an admin account", e4:"Use the Admin tab",
+  }
 
-    if (tab === "admin" && data.role !== "admin") {
-      setError("هذا الحساب ليس حساب مدير")
-      return
-    }
-    if (tab === "partner" && data.role === "admin") {
-      setError("استخدم تبويب المدير لتسجيل الدخول")
-      return
-    }
-
+  const login = async () => {
+    if (!code.trim() || !pass.trim()) { setErr(T.e1); return }
+    setLoad(true); setErr("")
+    const { data, error: dbErr } = await createClient()
+      .from("users").select("*")
+      .eq("code", code.trim()).eq("password", pass.trim()).single()
+    setLoad(false)
+    if (dbErr || !data) { setErr(T.e2); return }
+    if (isAdmin && data.role !== "admin") { setErr(T.e3); return }
+    if (!isAdmin && data.role === "admin") { setErr(T.e4); return }
     setUser(data)
-    if (data.role === "admin") router.push("/admin")
-    else if (data.role === "investor") router.push("/market")
-    else router.push("/dashboard")
+    router.push(data.role === "admin" ? "/admin" : data.role === "investor" ? "/market" : "/dashboard")
+  }
+
+  const ctrlBtn: React.CSSProperties = {
+    width:36, height:36, borderRadius:9,
+    border:`1px solid ${bord}`, background:card,
+    color:sub, cursor:"pointer",
+    display:"flex", alignItems:"center", justifyContent:"center",
+  }
+
+  const inpStyle: React.CSSProperties = {
+    width:"100%", borderRadius:11, fontSize:14,
+    background:inp, border:`1.5px solid ${bord}`,
+    color:text, fontFamily:"Cairo,Tajawal,sans-serif",
+    transition:"border-color .2s", boxSizing:"border-box",
+    outline:"none",
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{
-        background: "radial-gradient(ellipse at center, #1a0d00 0%, #0a0a0a 70%)",
-      }}
-    >
-      <div
-        className="w-full max-w-sm animate-scaleIn"
-        style={{
-          background: "#111111",
-          border: "2px solid #f97316",
-          borderRadius: "20px",
-          boxShadow: "0 0 40px rgba(249,115,22,0.3)",
-          padding: "40px 32px",
-        }}
-      >
-        {/* Logo */}
-        <div className="flex justify-center mb-4">
-          <Logo size="lg" />
-        </div>
-        <p className="text-center text-sm mb-8" style={{ color: "#9ca3af" }}>
-          النظام البيئي الرقمي
-        </p>
+    <div style={{
+      minHeight:"100vh", background:bg,
+      backgroundImage:`radial-gradient(circle, ${dark?"#ffffff07":"#00000005"} 1px, transparent 1px)`,
+      backgroundSize:"28px 28px",
+      display:"flex", alignItems:"center", justifyContent:"center",
+      padding:16, direction:dir, fontFamily:"Cairo,Tajawal,sans-serif",
+    }}>
 
-        {/* Tabs */}
-        <div
-          className="flex rounded-xl overflow-hidden mb-6"
-          style={{ background: "#1a1a1a", border: "1px solid #222" }}
-        >
-          {(["partner", "admin"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className="flex-1 py-2.5 text-sm font-bold transition-all"
-              style={{
-                background: tab === t ? "#f97316" : "transparent",
-                color: tab === t ? "#000" : "#9ca3af",
-                borderRadius: "10px",
-              }}
-            >
-              {t === "partner" ? "شريك" : "مدير"}
-            </button>
-          ))}
+      <div style={{
+        position:"fixed", top:"10%", left:"50%", transform:"translateX(-50%)",
+        width:500, height:350, borderRadius:"50%", pointerEvents:"none",
+        background:`radial-gradient(ellipse,${glow} 0%,transparent 65%)`,
+        transition:"background .4s",
+      }}/>
+
+      <div style={{
+        position:"fixed", top:16,
+        ...(lang==="ar" ? {left:16} : {right:16}),
+        display:"flex", gap:8, zIndex:10,
+      }}>
+        <button style={ctrlBtn} onClick={()=>setLang(l=>l==="ar"?"en":"ar")}>
+          <Languages size={15}/>
+        </button>
+        <button style={ctrlBtn} onClick={()=>setDark(d=>!d)}>
+          {dark ? <Sun size={15}/> : <Moon size={15}/>}
+        </button>
+      </div>
+
+      <div style={{
+        position:"relative", zIndex:1,
+        width:"100%", maxWidth:400,
+        background:card, borderRadius:20,
+        border:`1.5px solid ${accent}45`,
+        boxShadow:`0 0 0 1px ${bord}, 0 20px 60px ${glow}, 0 4px 24px rgba(0,0,0,0.3)`,
+        padding:"32px 26px 26px",
+        transition:"all .3s",
+      }}>
+
+        <div style={{
+          position:"absolute", top:0, left:"20%", right:"20%", height:2,
+          background:`linear-gradient(90deg,transparent,${accent},${acc2},transparent)`,
+          borderRadius:"0 0 6px 6px",
+        }}/>
+
+        <div style={{ display:"flex", justifyContent:"center", marginBottom:22 }}>
+          <Logo size="md" scheme={isAdmin?"red":"gold"} lang={lang}/>
         </div>
 
-        {/* Code input */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1.5" style={{ color: "#9ca3af" }}>
-            رمز الدخول
-          </label>
-          <div className="relative">
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:20 }}>
+          {([
+            { id:"user"  as const, label:T.tabUser,  s:T.subUser,  Icon:Users,        ac:"#f59e0b" },
+            { id:"admin" as const, label:T.tabAdmin, s:T.subAdmin, Icon:ShieldCheck,  ac:"#a78bfa" },
+          ]).map(({ id, label, s, Icon, ac }) => {
+            const active = tab === id
+            return (
+              <button key={id} onClick={()=>{ setTab(id); setErr("") }} style={{
+                padding:"11px 8px", borderRadius:12, cursor:"pointer",
+                border:`1.5px solid ${active ? ac+"90" : bord}`,
+                background: active ? ac+"12" : "transparent",
+                transition:"all .2s",
+                display:"flex", flexDirection:"column", alignItems:"center", gap:5,
+              }}>
+                <div style={{
+                  width:34, height:34, borderRadius:9,
+                  background: active ? ac+"22" : inp,
+                  border:`1px solid ${active ? ac+"55" : bord}`,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                }}>
+                  <Icon size={15} color={active ? ac : muted}/>
+                </div>
+                <span style={{ fontSize:11.5, fontWeight:700, color: active ? ac : sub }}>{label}</span>
+                <span style={{ fontSize:9.5, color:muted, textAlign:"center", lineHeight:1.3 }}>{s}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        <div style={{ height:1, background:bord, marginBottom:18 }}/>
+
+        <div style={{ marginBottom:13 }}>
+          <label style={{ display:"block", fontSize:11, fontWeight:700, color:sub, marginBottom:6 }}>{T.code}</label>
+          <div style={{ position:"relative" }}>
             <input
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="أدخل رمز الدخول"
-              className="w-full rounded-xl py-3 pr-10 pl-4 text-sm text-white"
-              style={{
-                background: "#1a1a1a",
-                border: "1.5px solid #333",
-                fontFamily: "'Tajawal', sans-serif",
-              }}
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              type="text" value={code} placeholder={T.codePh}
+              onChange={e=>setCode(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&login()}
+              style={{ ...inpStyle, padding:"10px 38px 10px 12px" }}
+              onFocus={e=>(e.target.style.borderColor=accent)}
+              onBlur={e=>(e.target.style.borderColor=bord)}
             />
-            <KeyRound
-              size={16}
-              className="absolute top-1/2 right-3 -translate-y-1/2"
-              style={{ color: "#f97316" }}
-            />
+            <KeyRound size={14} style={{ position:"absolute", top:"50%", right:12, transform:"translateY(-50%)", color:accent, pointerEvents:"none" }}/>
           </div>
         </div>
 
-        {/* Password input */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1.5" style={{ color: "#9ca3af" }}>
-            كلمة المرور
-          </label>
-          <div className="relative">
+        <div style={{ marginBottom:10 }}>
+          <label style={{ display:"block", fontSize:11, fontWeight:700, color:sub, marginBottom:6 }}>{T.pass}</label>
+          <div style={{ position:"relative" }}>
             <input
-              type={showPass ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="أدخل كلمة المرور"
-              className="w-full rounded-xl py-3 pr-10 pl-10 text-sm text-white"
-              style={{
-                background: "#1a1a1a",
-                border: "1.5px solid #333",
-                fontFamily: "'Tajawal', sans-serif",
-              }}
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              type={show?"text":"password"} value={pass} placeholder={T.passPh}
+              onChange={e=>setPass(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&login()}
+              style={{ ...inpStyle, padding:"10px 38px 10px 38px" }}
+              onFocus={e=>(e.target.style.borderColor=accent)}
+              onBlur={e=>(e.target.style.borderColor=bord)}
             />
-            <Lock
-              size={16}
-              className="absolute top-1/2 right-3 -translate-y-1/2"
-              style={{ color: "#f97316" }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPass(!showPass)}
-              className="absolute top-1/2 left-3 -translate-y-1/2"
-              style={{ color: "#9ca3af" }}
-            >
-              {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+            <Lock size={14} style={{ position:"absolute", top:"50%", right:12, transform:"translateY(-50%)", color:accent, pointerEvents:"none" }}/>
+            <button type="button" onClick={()=>setShow(s=>!s)} style={{
+              position:"absolute", top:"50%", left:10, transform:"translateY(-50%)",
+              background:"none", border:"none", color:muted, cursor:"pointer", padding:0, display:"flex",
+            }}>
+              {show ? <EyeOff size={14}/> : <Eye size={14}/>}
             </button>
           </div>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div
-            className="mb-4 px-3 py-2 rounded-lg text-sm text-center"
-            style={{ background: "#2a0808", color: "#ef4444", border: "1px solid #dc2626" }}
-          >
-            {error}
-          </div>
+        <div style={{ textAlign: lang==="ar" ? "left" : "right", marginBottom:16 }}>
+          <button onClick={()=>router.push("/recovery")} style={{
+            background:"none", border:"none", fontSize:11.5,
+            color:accent, cursor:"pointer", fontFamily:"Cairo,Tajawal,sans-serif",
+          }}>{T.forgot}</button>
+        </div>
+
+        {err && (
+          <div style={{
+            marginBottom:14, padding:"9px 13px", borderRadius:9,
+            fontSize:13, textAlign:"center",
+            background:acc2+"15", color:"#f87171",
+            border:"1px solid #f8717135",
+          }}>{err}</div>
         )}
 
-        {/* Forgot password */}
-        <div className="text-left mb-5">
-          <button
-            onClick={() => router.push("/recovery")}
-            className="text-xs hover:underline"
-            style={{ color: "#f97316" }}
-          >
-            نسيت كلمة المرور؟
-          </button>
-        </div>
-
-        {/* Login button */}
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          className="w-full py-3 rounded-xl font-bold text-base btn-primary"
-          style={{
-            background: loading ? "#7c3a0c" : "#f97316",
-            color: "#000",
-            border: "none",
-            height: "48px",
-          }}
-        >
-          {loading ? "جارٍ الدخول..." : "دخول"}
+        <button onClick={login} disabled={load} style={{
+          width:"100%", height:46, borderRadius:11, border:"none",
+          cursor: load ? "not-allowed" : "pointer",
+          fontSize:14, fontWeight:800,
+          fontFamily:"Cairo,Tajawal,sans-serif",
+          background: load ? muted : `linear-gradient(135deg,${accent},${acc2})`,
+          color: dark ? "#000" : "#fff",
+          boxShadow: load ? "none" : `0 4px 18px ${glow}`,
+          transition:"all .2s",
+        }}>
+          {load ? T.loading : T.btn}
         </button>
 
-        {/* Register link */}
-        <p className="text-center mt-5 text-sm" style={{ color: "#9ca3af" }}>
-          ليس لديك حساب؟{" "}
-          <button
-            onClick={() => router.push("/register")}
-            className="font-bold hover:underline"
-            style={{ color: "#f97316" }}
-          >
-            إنشاء حساب جديد
-          </button>
+        <p style={{ textAlign:"center", marginTop:18, fontSize:12.5, color:sub }}>
+          {T.noAcc}{" "}
+          <button onClick={()=>router.push("/register")} style={{
+            background:"none", border:"none", fontWeight:800,
+            fontSize:12.5, color:accent, cursor:"pointer",
+            fontFamily:"Cairo,Tajawal,sans-serif",
+          }}>{T.reg}</button>
         </p>
       </div>
     </div>
