@@ -1,0 +1,18 @@
+name: Unzip Project
+on: push
+permissions:
+  contents: write
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Unzip
+        run: |
+          unzip arabaawy-app-update.zip -d .
+          rm arabaawy-app-update.zip
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add .
+          git commit -m "Unzipped project files"
+          git push
