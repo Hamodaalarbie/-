@@ -1,13 +1,24 @@
 "use client"
 
+import React from 'react';
+
 interface LogoProps {
   size?: "sm" | "md" | "lg"
-  variant?: "orange" | "red" | "blue"
+  role?: "admin" | "investor" | "partner" | "employee"
 }
 
-export default function Logo({ size = "md", variant = "orange" }: LogoProps) {
-  const color = variant === "red" ? "#dc2626" : variant === "blue" ? "#3b82f6" : "#f97316"
-  const color2 = variant === "red" ? "#ff6b6b" : variant === "blue" ? "#60a5fa" : "#fbbf24"
+export default function Logo({ size = "md", role = "employee" }: LogoProps) {
+  // تحديد الألوان بناءً على دور المستخدم
+  const getColors = (role: string) => {
+    switch (role) {
+      case "admin": return { color: "#dc2626", color2: "#ef4444" }; // أحمر للإدارة
+      case "investor": return { color: "#2563eb", color2: "#60a5fa" }; // أزرق للمستثمر
+      case "partner": return { color: "#059669", color2: "#34d399" }; // أخضر للشريك
+      default: return { color: "#f97316", color2: "#fbbf24" }; // برتقالي افتراضي
+    }
+  };
+
+  const { color, color2 } = getColors(role);
 
   const sizes = {
     sm: { icon: 22, enText: "text-lg", arText: "text-xs", gap: "gap-2" },
@@ -18,13 +29,14 @@ export default function Logo({ size = "md", variant = "orange" }: LogoProps) {
 
   return (
     <div className={`flex items-center ${s.gap}`}>
+      {/* الحاوية الهندسية (المعين) */}
       <div
         style={{
           width: s.icon * 1.6,
           height: s.icon * 1.6,
           background: `linear-gradient(135deg, ${color}22, ${color2}11)`,
           border: `1.5px solid ${color}88`,
-          borderRadius: "14px",
+          clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", 
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -57,6 +69,8 @@ export default function Logo({ size = "md", variant = "orange" }: LogoProps) {
           </defs>
         </svg>
       </div>
+
+      {/* النصوص */}
       <div className="flex flex-col leading-none">
         <div className={`font-black italic tracking-tight ${s.enText}`} style={{ lineHeight: 1.1 }}>
           <span style={{ color, fontStyle: "italic", letterSpacing: "-0.02em" }}>Arab</span>
