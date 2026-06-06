@@ -238,7 +238,7 @@ export default function HomePage() {
             {lang==="ar"?"سجّل كشريك":"Register as Partner"}
           </button>
         </div>
-      </section>
+     );
 
       {/* ══════ FOOTER ══════ */}
       <footer style={{ padding:"24px", textAlign:"center",
