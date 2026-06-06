@@ -213,8 +213,15 @@ export default function HomePage() {
           }}>{lang==="ar"?"دخول":"Sign In"}</button>
         </div>
       </nav>
+<p
+  style={{
+    textAlign:"center",
+    margin:"20px 0"
+  }}
+>
+
 {lang==="ar"?"سجّل الآن وابدأ رحلتك الرقمية مع عرباوي":"Register now and start your digital journey with Arabaawy"}
-        </p>
+          </p>
         <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
           <button onClick={()=>{ setRegTab("investor"); setModal("register"); setRStep(1); setRDone(false) }}
             style={{ padding:"13px 32px", borderRadius:12, border:"none",
