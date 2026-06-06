@@ -1,50 +1,65 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff, User, Lock } from "lucide-react"
+import { Eye, EyeOff, KeyRound, Lock, Sun, Moon, Languages, Users, ShieldCheck } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { useAppContext } from "@/lib/context"
+import Logo from "@/components/Logo"
 
 export default function LoginPage() {
   const router = useRouter()
-  const [showPass, setShowPass] = useState(false)
-  const [role, setRole] = useState<"partner" | "admin">("partner")
+  const { setUser } = useAppContext()
+  const [tab,  setTab]  = useState<"user"|"admin">("user")
+  const [code, setCode] = useState("")
+  const [pass, setPass] = useState("")
+  const [show, setShow] = useState(false)
+  const [load, setLoad] = useState(false)
+  const [err,  setErr]  = useState("")
+  const [dark, setDark] = useState(true)
+  const [lang, setLang] = useState<"ar"|"en">("ar")
 
-  const inputStyle = "w-full bg-[#1a1a1a] border border-[#333] rounded-xl p-3 text-white outline-none focus:border-orange-500 transition-all"
+  const isAdmin = tab === "admin"
+  const dir     = lang === "ar" ? "rtl" : "ltr"
+  const bg      = dark ? "#06060f" : "#f0f0f8"
+  const card    = dark ? "#0d0d1a" : "#ffffff"
+  const bord    = dark ? "#1a1a2e" : "#dde0f0"
+  const inp     = dark ? "#11111f" : "#f5f5fc"
+  const text    = dark ? "#eeeef8" : "#0d0d1a"
+  const sub     = dark ? "#6666aa" : "#7777aa"
+  const muted   = dark ? "#333355" : "#c0c0dd"
+  const accent  = isAdmin ? "#a78bfa" : "#f59e0b"
+  const acc2    = isAdmin ? "#7c3aed" : "#f97316"
+  const glow    = isAdmin ? "rgba(167,139,250,0.18)" : "rgba(245,158,11,0.18)"
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#080808]">
-      <div className="w-full max-w-sm p-8 rounded-3xl border border-[#333] bg-[#111] shadow-2xl">
-        <h2 className="text-2xl font-bold text-center text-white mb-8">
-          {role === "partner" ? "تسجيل دخول الشريك" : "لوحة تحكم الإدارة"}
-        </h2>
-        
-        <div className="flex gap-2 mb-6 p-1 bg-[#1a1a1a] rounded-xl">
-          <button onClick={() => setRole("partner")} className={`flex-1 py-2 rounded-lg ${role === "partner" ? "bg-orange-500 text-black" : "text-gray-400"}`}>شريك</button>
-          <button onClick={() => setRole("admin")} className={`flex-1 py-2 rounded-lg ${role === "admin" ? "bg-orange-500 text-black" : "text-gray-400"}`}>مدير</button>
-        </div>
+  const T = lang === "ar" ? {
+    code:"رمز الدخول", codePh:"أدخل رمزك",
+    pass:"كلمة المرور", passPh:"كلمة المرور",
+    forgot:"نسيت كلمة المرور؟", btn:"دخول", loading:"جارٍ...",
+    noAcc:"ليس لديك حساب؟", reg:"سجّل الآن",
+    tabUser:"شريك / مستثمر", tabAdmin:"مدير النظام",
+    subUser:"للشركاء والمستثمرين", subAdmin:"للمديرين فقط",
+    e1:"أدخل الرمز وكلمة المرور", e2:"بيانات غير صحيحة",
+    e3:"ليس حساب مدير", e4:"استخدم تبويب المدير",
+  } : {
+    code:"Access Code", codePh:"Enter your code",
+    pass:"Password", passPh:"Your password",
+    forgot:"Forgot password?", btn:"Sign In", loading:"Loading...",
+    noAcc:"No account?", reg:"Register",
+    tabUser:"Partner / Investor", tabAdmin:"System Admin",
+    subUser:"For partners & investors", subAdmin:"For admins only",
+    e1:"Enter code and password", e2:"Invalid credentials",
+    e3:"Not an admin account", e4:"Use the Admin tab",
+  }
 
-        <div className="space-y-4">
-          <div className="relative">
-            <User className="absolute left-3 top-3 text-gray-500" size={18} />
-            <input className={`${inputStyle} pl-10`} placeholder="كود الدخول" />
-          </div>
-          
-          <div className="relative">
-            <Lock className="absolute left-3 top-3 text-gray-500" size={18} />
-            <input className={`${inputStyle} pl-10`} type={showPass ? "text" : "password"} placeholder="كلمة المرور" />
-            <button onClick={() => setShowPass(!showPass)} className="absolute right-3 top-3 text-gray-500">
-              {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-        </div>
-
-        <button className="w-full mt-8 py-3 bg-orange-500 text-black font-bold rounded-xl hover:bg-orange-400 transition-all">
-          دخول
-        </button>
-        
-        <p className="text-center text-gray-500 text-sm mt-6 cursor-pointer hover:text-orange-500">
-          نسيت رمز الدخول؟
-        </p>
-      </div>
-    </div>
-  )
-}
+  const login = async () => {
+    if (!code.trim() || !pass.trim()) { setErr(T.e1); return }
+    setLoad(true); setErr("")
+    const { data, error: dbErr } = await createClient()
+      .from("users").select("*")
+      .eq("code", code.trim()).eq("password", pass.trim()).single()
+    setLoad(false)
+    if (dbErr || !data) { setErr(T.e2); return }
+    if (isAdmin && data.role !== "admin") { setErr(T.e3); return }
+    if (!isAdmin && data.role === "admin") { setErr(T.e4); return }
+    setUser(data)
+    router
