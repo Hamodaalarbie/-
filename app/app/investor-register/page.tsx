@@ -1,601 +1,825 @@
-"use client"
+use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { useAppContext } from "@/lib/context"
-import { createClient } from "@/lib/supabase/client"
 import {
-  Sun, Moon, Languages, ShieldCheck, Eye, EyeOff,
-  KeyRound, Lock, TrendingUp, Users, Zap, Globe,
-  BarChart3, Layers, Star, ChevronDown, ArrowLeft,
-  Check, Copy, X, Sparkles, Menu
+  Eye, EyeOff, KeyRound, Lock, Moon, Sun, Globe,
+  ShieldCheck, TrendingUp, Users, BarChart3, Zap,
+  Building2, ChevronDown, ArrowRight, CheckCircle,
+  Briefcase, Rocket, HeartHandshake, Code2, Cpu,
+  Package, LineChart, Phone, Mail, MapPin, Clock,
+  Layers, Target, DollarSign, Star, Sparkles,
+  PieChart, Activity, Award, BadgeCheck,
 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { useAppContext } from "@/lib/context"
 import Logo from "@/components/Logo"
-import { SECURITY_QUESTIONS, DEPARTMENTS } from "@/lib/types"
 
-const TK = {
-  dark: {
-    bg:"#05050e", surface:"#0b0b18", card:"#0f0f22",
-    border:"#1a1a35", text:"#eeeef8", sub:"#6666aa", muted:"#2a2a50",
-    isDark:true,
+// ═══════════════════════════════════════════════════════════
+// THEME SYSTEM
+// ═══════════════════════════════════════════════════════════
+type Theme = "dark" | "light"
+type Lang  = "ar"  | "en"
+
+const DARK = {
+  bg:       "#060606",
+  bg2:      "#0d0d0d",
+  bg3:      "#141414",
+  card:     "#0d0d0d",
+  border:   "#1c1c1c",
+  text:     "#f5f5f5",
+  textSub:  "#9ca3af",
+  accent:   "#FF6B00",
+  accent2:  "#FFD700",
+  accent3:  "#FF3D6B",
+  accent4:  "#00D4FF",
+  green:    "#22c55e",
+  purple:   "#A855F7",
+  gradBg:   "radial-gradient(ellipse 80% 55% at 50% -8%,#FF6B001e 0%,transparent 55%),radial-gradient(ellipse at 88% 78%,#FFD70010 0%,transparent 48%),radial-gradient(ellipse at 10% 90%,#00D4FF0c 0%,transparent 50%),#060606",
+  shadow:   "0 0 80px #FF6B0018,0 32px 80px rgba(0,0,0,0.6)",
+  navBg:    "rgba(6,6,6,0.88)",
+}
+const LIGHT = {
+  bg:       "#F8F7F3",
+  bg2:      "#F0EEE8",
+  bg3:      "#E8E5DC",
+  card:     "#FFFFFF",
+  border:   "#E2DFD5",
+  text:     "#111111",
+  textSub:  "#6b7280",
+  accent:   "#D45A00",
+  accent2:  "#B8860B",
+  accent3:  "#C0284E",
+  accent4:  "#0088A8",
+  green:    "#16a34a",
+  purple:   "#7C3AED",
+  gradBg:   "radial-gradient(ellipse 80% 55% at 50% -8%,#FF6B0012 0%,transparent 55%),radial-gradient(ellipse at 88% 78%,#FFD7000c 0%,transparent 48%),#F8F7F3",
+  shadow:   "0 4px 40px rgba(0,0,0,0.08)",
+  navBg:    "rgba(248,247,243,0.92)",
+}
+
+// ═══════════════════════════════════════════════════════════
+// TRANSLATIONS
+// ═══════════════════════════════════════════════════════════
+const T = {
+  ar: {
+    nav: { products:"المنتجات", services:"الخدمات", investors:"المستثمرون", partners:"الشركاء", contact:"تواصل معنا" },
+    hero: {
+      badge:   "النظام البيئي الرقمي الأول في مصر والوطن العربي",
+      line1:   "منصة",
+      brand:   "عرباوي",
+      line2:   "للاستثمار الذكي",
+      desc:    "نظام بيئي رقمي متكامل يجمع المنتجات الرقمية، الشركاء الاستراتيجيين، والمستثمرين لتحقيق أقصى العوائد وبناء مستقبل رقمي مزدهر",
+      cta1:    "ابدأ الاستثمار الآن",
+      cta2:    "اكتشف المنصة",
+      scroll:  "اسحب للأسفل",
+    },
+    stats: [
+      { val:"500+",  label:"شريك نشط",          icon:"Users"     },
+      { val:"120M+", label:"حجم الاستثمارات",    icon:"DollarSign"},
+      { val:"98%",   label:"رضا العملاء",        icon:"Star"      },
+      { val:"50+",   label:"مشروع منجز بنجاح",  icon:"Award"     },
+    ],
+    productsTitle: "منتجاتنا الرقمية",
+    productsSub:   "حلول مبتكرة وخطط استثمارية مدروسة لكل هدف وكل طموح",
+    servicesTitle: "خدماتنا المتكاملة",
+    servicesSub:   "منظومة شاملة من الحلول الاستثمارية المصممة لنجاحك",
+    whyTitle:      "لماذا تختار عرباوي؟",
+    whySub:        "نظام بيئي متكامل يخدم الجميع — المستثمرون والشركاء والشركات الناشئة",
+    contactTitle:  "تواصل معنا",
+    contactSub:    "فريقنا جاهز لمساعدتك في كل خطوة من رحلتك الاستثمارية",
+    loginTitle:    "تسجيل الدخول",
+    loginSub:      "النظام البيئي الرقمي",
+    code:          "رمز الدخول",
+    codePh:        "أدخل رمز الدخول",
+    pass:          "كلمة المرور",
+    passPh:        "أدخل كلمة المرور",
+    investor:      "مستثمر",
+    partner:       "شريك",
+    admin:         "مدير",
+    login:         "دخول",
+    logging:       "جارٍ الدخول...",
+    forgot:        "نسيت كلمة المرور؟",
+    noAccount:     "ليس لديك حساب؟",
+    regPartner:    "تسجيل شريك",
+    regInvestor:   "تسجيل مستثمر",
+    explore:       "اكتشف الآن",
+    getStarted:    "ابدأ الآن",
+    err: {
+      empty:    "يرجى إدخال رمز الدخول وكلمة المرور",
+      wrong:    "بيانات غير صحيحة، تحقق من الرمز وكلمة المرور",
+      notAdmin: "هذا الحساب ليس حساب مدير",
+      useAdmin: "استخدم زر الإدارة لتسجيل الدخول",
+    },
+    contact: {
+      phone:   "+20 100 000 0000",
+      email:   "invest@arabaawy.com",
+      address: "القاهرة، جمهورية مصر العربية",
+      hours:   "9 ص – 5 م | الأحد – الخميس",
+    },
+    footer: "جميع الحقوق محفوظة · عرباوي للاستثمار الرقمي",
   },
-  light: {
-    bg:"#f4f4fc", surface:"#ffffff", card:"#ffffff",
-    border:"#e0e0f0", text:"#0a0a1f", sub:"#6060a0", muted:"#d0d0e8",
-    isDark:false,
+  en: {
+    nav: { products:"Products", services:"Services", investors:"Investors", partners:"Partners", contact:"Contact" },
+    hero: {
+      badge:   "Egypt & Arab World's #1 Digital Investment Ecosystem",
+      line1:   "Arabaawy",
+      brand:   "Smart",
+      line2:   "Investment Platform",
+      desc:    "An integrated digital ecosystem connecting digital products, strategic partners, and investors to maximise returns and build a prosperous digital future",
+      cta1:    "Start Investing Now",
+      cta2:    "Explore Platform",
+      scroll:  "Scroll down",
+    },
+    stats: [
+      { val:"500+",  label:"Active Partners",      icon:"Users"      },
+      { val:"120M+", label:"Investment Volume",     icon:"DollarSign" },
+      { val:"98%",   label:"Client Satisfaction",   icon:"Star"       },
+      { val:"50+",   label:"Completed Projects",    icon:"Award"      },
+    ],
+    productsTitle: "Digital Products",
+    productsSub:   "Innovative solutions and investment plans for every goal and ambition",
+    servicesTitle: "Our Services",
+    servicesSub:   "A comprehensive suite of investment solutions designed for your success",
+    whyTitle:      "Why Choose Arabaawy?",
+    whySub:        "A complete ecosystem serving everyone — investors, partners, and startups",
+    contactTitle:  "Contact Us",
+    contactSub:    "Our team is ready to help you at every step of your investment journey",
+    loginTitle:    "Sign In",
+    loginSub:      "Digital Ecosystem",
+    code:          "Access Code",
+    codePh:        "Enter your access code",
+    pass:          "Password",
+    passPh:        "Enter your password",
+    investor:      "Investor",
+    partner:       "Partner",
+    admin:         "Admin",
+    login:         "Login",
+    logging:       "Logging in...",
+    forgot:        "Forgot password?",
+    noAccount:     "Don't have an account?",
+    regPartner:    "Register Partner",
+    regInvestor:   "Register Investor",
+    explore:       "Explore Now",
+    getStarted:    "Get Started",
+    err: {
+      empty:    "Please enter access code and password",
+      wrong:    "Invalid credentials, please check and try again",
+      notAdmin: "This account is not an admin account",
+      useAdmin: "Use the admin button to sign in",
+    },
+    contact: {
+      phone:   "+20 100 000 0000",
+      email:   "invest@arabaawy.com",
+      address: "Cairo, Arab Republic of Egypt",
+      hours:   "9 AM – 5 PM | Sun – Thu",
+    },
+    footer: "All rights reserved · Arabaawy Digital Investment",
   },
 }
 
-const ROLE_COLORS = {
-  partner:  { a:"#3b82f6", b:"#06b6d4", glow:"rgba(59,130,246,0.2)"  },
-  investor: { a:"#8b5cf6", b:"#d97706", glow:"rgba(139,92,246,0.2)"  },
-  admin:    { a:"#10b981", b:"#ec4899", glow:"rgba(16,185,129,0.2)"  },
+// ═══════════════════════════════════════════════════════════
+// PRODUCTS & SERVICES DATA
+// ═══════════════════════════════════════════════════════════
+const PRODUCTS_AR = [
+  { icon:Code2,         color:"#00D4FF", tag:"SaaS",        name:"نظام إدارة المحافظ",       desc:"لوحة تحكم ذكية لإدارة استثماراتك بالكامل في مكان واحد بتقارير آنية",            badge:"الأكثر مبيعاً", featured:true  },
+  { icon:Cpu,           color:"#FF3D6B", tag:"أتمتة",       name:"بوت التداول الآلي",          desc:"خوارزميات ذكية تعمل 24/7 لتعظيم عوائد محفظتك الرقمية دون تدخل بشري",          badge:"جديد",          featured:true  },
+  { icon:Package,       color:"#FFD700", tag:"استثمار",     name:"صندوق النمو الرقمي",         desc:"استثمر في أعلى الأصول الرقمية أداءً بعوائد سنوية تصل إلى 25%",                badge:null,            featured:false },
+  { icon:LineChart,     color:"#22c55e", tag:"تحليل",       name:"منصة التحليل والتقارير",    desc:"تقارير آنية ومؤشرات دقيقة لاتخاذ قرارات استثمارية مدروسة وذكية",              badge:null,            featured:false },
+  { icon:Rocket,        color:"#A855F7", tag:"ريادة",       name:"بوابة الشركات الناشئة",     desc:"ابدأ مشروعك وتواصل مع المستثمرين والمرشدين المتخصصين في بيئة آمنة",            badge:"قريباً",        featured:false },
+  { icon:HeartHandshake,color:"#FF6B00", tag:"شراكات",      name:"برنامج الشراكة الذهبي",     desc:"انضم لشبكة شركاء عرباوي وحقق دخلاً إضافياً ثابتاً ومستداماً",                 badge:"حصري",          featured:false },
+]
+const PRODUCTS_EN = [
+  { icon:Code2,         color:"#00D4FF", tag:"SaaS",        name:"Portfolio Management System",  desc:"Smart dashboard to manage all your investments in one place with live reports",   badge:"Best Seller",  featured:true  },
+  { icon:Cpu,           color:"#FF3D6B", tag:"Automation",  name:"Automated Trading Bot",         desc:"Smart 24/7 algorithms to maximise your digital portfolio returns automatically",  badge:"New",          featured:true  },
+  { icon:Package,       color:"#FFD700", tag:"Investment",  name:"Digital Growth Fund",           desc:"Invest in top-performing digital assets with annual returns up to 25%",           badge:null,           featured:false },
+  { icon:LineChart,     color:"#22c55e", tag:"Analytics",   name:"Analytics & Reports Platform",  desc:"Real-time reports and precise indicators for smart investment decisions",          badge:null,           featured:false },
+  { icon:Rocket,        color:"#A855F7", tag:"Startup",     name:"Startup Gateway",               desc:"Launch your project and connect with investors and expert mentors safely",        badge:"Soon",         featured:false },
+  { icon:HeartHandshake,color:"#FF6B00", tag:"Partnerships",name:"Gold Partnership Program",      desc:"Join Arabaawy's partner network and earn steady, sustainable additional income",  badge:"Exclusive",    featured:false },
+]
+
+const SERVICES_AR = [
+  { icon:TrendingUp,  title:"إدارة المحافظ الاستثمارية", desc:"تحليل وإدارة احترافية بأعلى معايير الأداء والشفافية الكاملة"          },
+  { icon:Building2,   title:"الشراكات التجارية",          desc:"فرص شراكة استراتيجية مع شبكة واسعة من رواد الأعمال والمؤسسات"        },
+  { icon:BarChart3,   title:"تحليل السوق والفرص",         desc:"تقارير دورية وتحليلات معمقة لرصد أفضل الفرص الاستثمارية"              },
+  { icon:ShieldCheck, title:"حماية الاستثمار",            desc:"أنظمة حماية متعددة الطبقات لصون أصولك ورأس مالك بأمان تام"           },
+  { icon:Users,       title:"إدارة شبكة الشركاء",        desc:"منظومة متكاملة لتتبع الأداء والعمولات وتطوير العلاقات التجارية"       },
+  { icon:Layers,      title:"التنويع الاستثماري الذكي",  desc:"استراتيجيات توزيع الأصول عبر قطاعات متعددة لتقليل المخاطر وزيادة العائد"},
+]
+const SERVICES_EN = [
+  { icon:TrendingUp,  title:"Investment Portfolio Management", desc:"Professional analysis and management to the highest performance and transparency standards" },
+  { icon:Building2,   title:"Business Partnerships",           desc:"Strategic partnership opportunities with a broad network of entrepreneurs and institutions"   },
+  { icon:BarChart3,   title:"Market & Opportunity Analysis",   desc:"Periodic reports and in-depth analysis to identify the best investment opportunities"          },
+  { icon:ShieldCheck, title:"Investment Protection",           desc:"Multi-layer protection systems to safeguard your assets and capital with full security"         },
+  { icon:Users,       title:"Partner Network Management",      desc:"Comprehensive system for tracking performance, commissions, and business relationships"        },
+  { icon:Layers,      title:"Smart Investment Diversification", desc:"Multi-sector asset allocation strategies to minimise risk and maximise returns"               },
+]
+
+const WHY_AR = [
+  { color:"#22c55e", Icon:TrendingUp, title:"للمستثمرين",        items:["عوائد مضمونة حتى 25% سنوياً","تقارير أداء شهرية مفصّلة","مستشار استثماري شخصي","حماية متعددة الطبقات لرأس المال"] },
+  { color:"#FF6B00", Icon:Briefcase,  title:"للشركاء",           items:["نظام عمولات شفاف ومتكامل","أدوات إدارة مشاريع احترافية","شبكة شركاء ممتدة وقوية","دعم فني وتشغيلي على مدار الساعة"] },
+  { color:"#00D4FF", Icon:Rocket,     title:"للشركات الناشئة",   items:["تمويل أولي وتوسعي مرن","مرشدون متخصصون في كل المجالات","وصول مباشر لشبكة مستثمرين واسعة","بيئة عمل وبنية تحتية متكاملة"] },
+]
+const WHY_EN = [
+  { color:"#22c55e", Icon:TrendingUp, title:"For Investors",   items:["Returns up to 25% annually","Detailed monthly performance reports","Personal investment advisor","Multi-layer capital protection"] },
+  { color:"#FF6B00", Icon:Briefcase,  title:"For Partners",    items:["Transparent and integrated commission system","Professional project management tools","Strong and extended partner network","Round-the-clock technical and operational support"] },
+  { color:"#00D4FF", Icon:Rocket,     title:"For Startups",    items:["Flexible seed and expansion funding","Expert mentors across all domains","Direct access to a wide investor network","Complete work environment and infrastructure"] },
+]
+
+// ═══════════════════════════════════════════════════════════
+// SMALL HELPERS
+// ═══════════════════════════════════════════════════════════
+function AnimCounter({ val, dur = 1800 }: { val: string; dur?: number }) {
+  const [disp, setDisp] = useState("0")
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const num = parseFloat(val.replace(/[^0-9.]/g, ""))
+    if (isNaN(num)) { setDisp(val); return }
+    const pre = val.match(/^[^0-9]*/)?.[0] ?? ""
+    const suf = val.match(/[^0-9.]*$/)?.[0] ?? ""
+    const t0  = Date.now()
+    const tick = () => {
+      const p = Math.min((Date.now() - t0) / dur, 1)
+      const e = 1 - Math.pow(1 - p, 3)
+      setDisp(`${pre}${Math.round(e * num)}${suf}`)
+      if (p < 1) requestAnimationFrame(tick)
+    }
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { tick(); obs.disconnect() } })
+    if (ref.current) obs.observe(ref.current)
+    return () => obs.disconnect()
+  }, [val, dur])
+  return <div ref={ref}>{disp}</div>
 }
 
-function genCode(prefix: string) {
-  const d = Math.floor(1000 + Math.random() * 9000)
-  const l = String.fromCharCode(65+Math.floor(Math.random()*26)) + String.fromCharCode(65+Math.floor(Math.random()*26))
-  return `${prefix.toUpperCase().slice(0,3)}${d}${l}`
-}
-
-function PwBar({ pw, sub }: { pw:string; sub:string }) {
-  const s = [pw.length>=8,/[A-Z]/.test(pw),/[0-9]/.test(pw),/[^A-Za-z0-9]/.test(pw)].filter(Boolean).length
-  if (!pw) return null
-  const cols = ["#ef4444","#f97316","#eab308","#22c55e"]
-  const labs = ["ضعيفة","مقبولة","جيدة","قوية"]
+function Pill({ label, color }: { label: string; color: string }) {
   return (
-    <div style={{ marginTop:5 }}>
-      <div style={{ display:"flex", gap:3, marginBottom:3 }}>
-        {[0,1,2,3].map(i=>(
-          <div key={i} style={{ flex:1, height:3, borderRadius:99,
-            background: i<s ? cols[s-1] : "#2a2a50", transition:"background .3s" }}/>
-        ))}
-      </div>
-      {s>0 && <span style={{ fontSize:10.5, color:cols[s-1] }}>كلمة مرور {labs[s-1]}</span>}
+    <span style={{
+      display:"inline-block", padding:"2px 9px", borderRadius:100,
+      background:`${color}1e`, border:`1px solid ${color}55`,
+      color, fontSize:10, fontWeight:800, letterSpacing:"0.04em",
+    }}>{label}</span>
+  )
+}
+
+function SecHead({ title, sub, accent }: { title: string; sub: string; accent: string }) {
+  return (
+    <div style={{ textAlign:"center", marginBottom:52 }}>
+      <h2 style={{ fontSize:"clamp(22px,4vw,36px)", fontWeight:900, margin:"0 0 10px", fontStyle:"italic" }}>
+        <span style={{ background:`linear-gradient(90deg,${accent},#FFD700)`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>{title}</span>
+      </h2>
+      <p style={{ color:"#6b7280", fontSize:15, margin:0, maxWidth:520, marginInline:"auto" }}>{sub}</p>
     </div>
   )
 }
 
-function CountUp({ target, suffix="" }: { target:number; suffix?:string }) {
-  const [v, setV] = useState(0)
-  const ref = useRef<HTMLSpanElement>(null)
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return
-      let c = 0
-      const step = Math.ceil(target / 60)
-      const t = setInterval(() => { c += step; if (c >= target) { setV(target); clearInterval(t) } else setV(c) }, 20)
-      obs.disconnect()
-    }, { threshold: 0.5 })
-    if (ref.current) obs.observe(ref.current)
-    return () => obs.disconnect()
-  }, [target])
-  return <span ref={ref}>{v.toLocaleString("ar-EG")}{suffix}</span>
-}
-
-export default function HomePage() {
+// ═══════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════════════════════════════
+export default function LoginPage() {
   const router = useRouter()
-  const { user, setUser } = useAppContext()
-  const [dark,   setDark]   = useState(true)
-  const [lang,   setLang]   = useState<"ar"|"en">("ar")
-  const [modal,  setModal]  = useState<"login"|"register"|"admin"|null>(null)
-  const [regTab, setRegTab] = useState<"partner"|"investor">("partner")
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [lCode, setLCode] = useState("")
-  const [lPass, setLPass] = useState("")
-  const [lShow, setLShow] = useState(false)
-  const [lLoad, setLLoad] = useState(false)
-  const [lErr,  setLErr]  = useState("")
-  const [rName,  setRName]  = useState("")
-  const [rPhone, setRPhone] = useState("")
-  const [rNatId, setRNatId] = useState("")
-  const [rDept,  setRDept]  = useState("")
-  const [rPw,    setRPw]    = useState("")
-  const [rPw2,   setRPw2]   = useState("")
-  const [rSecQ,  setRSecQ]  = useState(SECURITY_QUESTIONS[0])
-  const [rSecA,  setRSecA]  = useState("")
-  const [rShow,  setRShow]  = useState(false)
-  const [rStep,  setRStep]  = useState(1)
-  const [rLoad,  setRLoad]  = useState(false)
-  const [rErr,   setRErr]   = useState("")
-  const [rCode,  setRCode]  = useState("")
-  const [rCopied,setRCopied]= useState(false)
-  const [rDone,  setRDone]  = useState(false)
+  const { setUser } = useAppContext()
 
-  const T  = TK[dark ? "dark" : "light"]
-  const RC = ROLE_COLORS[regTab === "partner" ? "partner" : "investor"]
-  const dir = lang === "ar" ? "rtl" : "ltr"
+  const [lang,    setLang]    = useState<Lang>("ar")
+  const [theme,   setTheme]   = useState<Theme>("dark")
+  const [tab,     setTab]     = useState<"investor"|"partner"|"admin">("investor")
+  const [code,    setCode]    = useState("")
+  const [pass,    setPass]    = useState("")
+  const [showP,   setShowP]   = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState("")
+  const [scrolled,setScrolled]= useState(false)
+
+  const t   = T[lang]
+  const rtl = lang === "ar"
+  const c   = theme === "dark" ? DARK : LIGHT
 
   useEffect(() => {
-    if (user) router.replace(user.role === "admin" ? "/admin" : user.role === "investor" ? "/market" : "/dashboard")
-  }, [user])
+    const fn = () => setScrolled(window.scrollY > 40)
+    window.addEventListener("scroll", fn)
+    return () => window.removeEventListener("scroll", fn)
+  }, [])
 
-  const doLogin = async (isAdmin = false) => {
-    if (!lCode.trim() || !lPass.trim()) { setLErr("أدخل البيانات"); return }
-    setLLoad(true); setLErr("")
-    const { data, error } = await createClient().from("users").select("*")
-      .eq("code", lCode.trim()).eq("password", lPass.trim()).single()
-    setLLoad(false)
-    if (error || !data) { setLErr("بيانات غير صحيحة"); return }
-    if (isAdmin && data.role !== "admin") { setLErr("ليس حساب مدير"); return }
-    if (!isAdmin && data.role === "admin") { setLErr("استخدم بوابة المدراء"); return }
+  const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior:"smooth" })
+
+  const handleLogin = async () => {
+    if (!code.trim() || !pass.trim()) { setError(t.err.empty); return }
+    setLoading(true); setError("")
+    const sb = createClient()
+    const { data, error: dbErr } = await sb.from("users").select("*")
+      .eq("code", code.trim()).eq("password", pass.trim()).single()
+    setLoading(false)
+    if (dbErr || !data) { setError(t.err.wrong); return }
+    if (tab === "admin" && data.role !== "admin") { setError(t.err.notAdmin); return }
+    if (tab !== "admin" && data.role === "admin") { setError(t.err.useAdmin); return }
     setUser(data)
+    router.push(data.role === "admin" ? "/admin" : data.role === "investor" ? "/market" : "/dashboard")
   }
-
-  const doRegister = async () => {
-    setRErr(""); setRLoad(true)
-    const code = genCode(regTab === "partner" ? rDept : "INV")
-    const payload: Record<string,unknown> = {
-      name: rName.trim(), phone: rPhone.trim(), code,
-      password: rPw.trim(), role: regTab,
-      rank:"iron", points:0, shares:0,
-      security_question: rSecQ,
-      security_answer: rSecA.trim().toLowerCase(),
-    }
-    if (regTab === "partner") payload.dept = rDept
-    if (regTab === "investor") payload.national_id = rNatId.trim()
-    const { data, error } = await createClient().from("users").insert(payload).select().single()
-    setRLoad(false)
-    if (error) { setRErr(error.message.includes("phone") ? "الهاتف مسجل مسبقاً" : "حدث خطأ"); return }
-    setRCode(code); setUser(data); setRDone(true)
-  }
-
-  const loginScheme = modal === "admin" ? "red" : "gold"
-  const accent  = modal === "admin" ? "#10b981" : modal === "register" ? RC.a : "#f59e0b"
-  const accent2 = modal === "admin" ? "#ec4899" : modal === "register" ? RC.b : "#f97316"
 
   const inp: React.CSSProperties = {
-    width:"100%", padding:"11px 14px", borderRadius:11, fontSize:14,
-    background:T.surface, border:`1.5px solid ${T.border}`,
-    color:T.text, fontFamily:"Cairo,Tajawal,sans-serif",
-    outline:"none", transition:"border-color .2s", boxSizing:"border-box",
+    width:"100%", borderRadius:12, padding:"13px 44px 13px 16px",
+    fontSize:14, color:c.text, background:c.bg2,
+    border:`1.5px solid ${c.border}`, outline:"none",
+    fontFamily:"'Tajawal',sans-serif", direction:"rtl", transition:"border-color .2s",
   }
 
-  const stats = [
-    { icon:Users,    label: lang==="ar"?"عضو نشط":"Active Members",    value:1240, suffix:"+" },
-    { icon:BarChart3, label: lang==="ar"?"مشروع رقمي":"Digital Projects", value:38,   suffix:"" },
-    { icon:Zap,      label: lang==="ar"?"مستثمر":"Investors",            value:94,   suffix:"+" },
-    { icon:Star,     label: lang==="ar"?"نجمة تقييم":"Rating",            value:4,    suffix:".9★" },
-  ]
-
-  const services = [
-    { icon:Globe,    title:lang==="ar"?"التجارة الرقمية":"Digital Commerce",   desc:lang==="ar"?"منصات متكاملة للبيع والتسويق الرقمي":"Integrated platforms for digital sales & marketing" },
-    { icon:BarChart3, title:lang==="ar"?"الاستثمار الذكي":"Smart Investment",  desc:lang==="ar"?"فرص استثمارية في مشاريع رقمية واعدة":"Investment opportunities in promising digital projects" },
-    { icon:Layers,   title:lang==="ar"?"بناء الفرق":"Team Building",           desc:lang==="ar"?"شراكات احترافية مع كفاءات متخصصة":"Professional partnerships with specialized talents" },
-    { icon:Sparkles, title:lang==="ar"?"الإبداع الرقمي":"Digital Creativity", desc:lang==="ar"?"إنتاج محتوى وتصميم وتطوير متكامل":"Content production, design & full development" },
-  ]
-
-  const NAV = lang==="ar"
-    ? ["الرئيسية","خدماتنا","المشاريع","من نحن"]
-    : ["Home","Services","Projects","About"]
-
-  const ctrlBtn: React.CSSProperties = {
-    width:34, height:34, borderRadius:9, border:`1px solid ${T.border}`,
-    background:"transparent", color:T.sub, cursor:"pointer",
-    display:"flex", alignItems:"center", justifyContent:"center",
-  }
+  const products = lang === "ar" ? PRODUCTS_AR : PRODUCTS_EN
+  const services = lang === "ar" ? SERVICES_AR : SERVICES_EN
+  const why      = lang === "ar" ? WHY_AR      : WHY_EN
 
   return (
-    <div style={{ minHeight:"100vh", background:T.bg, color:T.text,
-      fontFamily:"Cairo,Tajawal,sans-serif", direction:dir, transition:"background .3s" }}>
+    <div dir={rtl?"rtl":"ltr"} style={{ background:c.bg, color:c.text, minHeight:"100vh", fontFamily:"'Tajawal',sans-serif", overflowX:"hidden" }}>
+
+      {/* ══════════ NAV ══════════ */}
 
       <nav style={{
-        position:"fixed", top:0, left:0, right:0, zIndex:50,
-        background:`${T.surface}ee`, backdropFilter:"blur(16px)",
-        borderBottom:`1px solid ${T.border}`,
-        padding:"0 24px", height:60,
+        position:"fixed", top:0, left:0, right:0, zIndex:200,
+        background: scrolled
+          ? theme==="dark" ? "rgba(6,6,6,0.95)" : "rgba(248,247,243,0.97)"
+          : c.navBg,
+        backdropFilter:"blur(28px)",
+        borderBottom:`1px solid ${scrolled ? c.border : "transparent"}`,
+        padding:"0 28px", height:64,
         display:"flex", alignItems:"center", justifyContent:"space-between",
+        transition:"all .3s",
       }}>
-        <Logo size="sm" scheme="gold" lang={lang}/>
-        <div style={{ display:"flex", gap:28, alignItems:"center" }}>
-          {NAV.map(n => (
-            <span key={n} style={{ fontSize:13, fontWeight:600, color:T.sub, cursor:"pointer", transition:"color .2s" }}
-              onMouseEnter={e=>(e.currentTarget.style.color=T.text)}
-              onMouseLeave={e=>(e.currentTarget.style.color=T.sub)}>
-              {n}
-            </span>
+        <Logo size="sm" />
+
+        {/* Centre links */}
+        <div style={{ display:"flex", gap:2, alignItems:"center" }}>
+          {Object.entries(t.nav).map(([k,v]) => (
+            <button key={k} onClick={() => go(`${k}-section`)} style={{
+              background:"none", border:"none", cursor:"pointer",
+              color:c.textSub, fontSize:13, fontWeight:600, padding:"6px 11px",
+              borderRadius:8, fontFamily:"'Tajawal',sans-serif", transition:"color .2s",
+            }}
+              onMouseEnter={e=>(e.currentTarget.style.color=c.accent)}
+              onMouseLeave={e=>(e.currentTarget.style.color=c.textSub)}
+            >{v}</button>
           ))}
         </div>
-        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-          <button style={ctrlBtn} onClick={()=>setLang(l=>l==="ar"?"en":"ar")}><Languages size={14}/></button>
-          <button style={ctrlBtn} onClick={()=>setDark(d=>!d)}>{dark?<Sun size={14}/>:<Moon size={14}/>}</button>
-          <button onClick={()=>{ setModal("admin"); setLErr("") }} style={{
-            width:34, height:34, borderRadius:9,
-            border:"1px solid #10b98155", background:"#10b98110",
-            color:"#10b981", cursor:"pointer",
-            display:"flex", alignItems:"center", justifyContent:"center",
-          }}><ShieldCheck size={14}/></button>
-          <button onClick={()=>{ setModal("login"); setLErr("") }} style={{
-            padding:"8px 16px", borderRadius:9, border:"none",
-            background:"linear-gradient(135deg,#f59e0b,#f97316)",
-            color:"#000", fontWeight:800, fontSize:13,
-            fontFamily:"Cairo,Tajawal,sans-serif", cursor:"pointer",
-          }}>{lang==="ar"?"دخول":"Sign In"}</button>
+
+        {/* Right controls */}
+        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+          {/* Investor login */}
+          <button onClick={()=>{ setTab("investor"); go("login-section") }} style={{
+            display:"flex", alignItems:"center", gap:6,
+            background:`linear-gradient(135deg,${c.accent},${c.accent2})`,
+            border:"none", borderRadius:10, padding:"8px 16px",
+            cursor:"pointer", color:"#000", fontSize:12, fontWeight:800,
+            fontFamily:"'Tajawal',sans-serif",
+            boxShadow:`0 4px 16px ${c.accent}44`,
+          }}>
+            <TrendingUp size={12}/> {rtl?"دخول المستثمر":"Investor"}
+          </button>
+          {/* Partner login */}
+          <button onClick={()=>{ setTab("partner"); go("login-section") }} style={{
+            display:"flex", alignItems:"center", gap:6,
+            background:c.bg3, border:`1px solid ${c.border}`,
+            borderRadius:10, padding:"8px 14px",
+            cursor:"pointer", color:c.text, fontSize:12, fontWeight:700,
+            fontFamily:"'Tajawal',sans-serif",
+          }}>
+            <Briefcase size={12} color={c.accent}/> {rtl?"دخول الشريك":"Partner"}
+          </button>
+          {/* Lang */}
+          <button onClick={()=>setLang(lang==="ar"?"en":"ar")} style={{
+            background:c.bg3, border:`1px solid ${c.border}`,
+            borderRadius:10, padding:"8px 11px", cursor:"pointer",
+            color:c.textSub, fontSize:12, fontWeight:700,
+            display:"flex", alignItems:"center", gap:5,
+          }}>
+            <Globe size={12} color={c.accent}/> {lang==="ar"?"EN":"AR"}
+          </button>
+          {/* Theme */}
+          <button onClick={()=>setTheme(theme==="dark"?"light":"dark")} style={{
+            background:c.bg3, border:`1px solid ${c.border}`,
+            borderRadius:10, padding:"8px 9px", cursor:"pointer",
+            display:"flex", alignItems:"center",
+          }}>
+            {theme==="dark"?<Sun size={14} color={c.accent}/>:<Moon size={14} color={c.accent}/>}
+          </button>
+          {/* Admin — subtle */}
+          <button onClick={()=>{ setTab("admin"); go("login-section") }} title={t.admin} style={{
+            background:"transparent", border:`1px solid ${c.border}`,
+            borderRadius:8, padding:"7px 8px", cursor:"pointer",
+            display:"flex", alignItems:"center", opacity:.4, transition:"opacity .2s",
+          }}
+            onMouseEnter={e=>(e.currentTarget.style.opacity="1")}
+            onMouseLeave={e=>(e.currentTarget.style.opacity="0.4")}
+          >
+            <ShieldCheck size={13} color={c.textSub}/>
+          </button>
         </div>
       </nav>
-{/* ══════ HERO ══════ */}
-      <section style={{ minHeight:"100vh", display:"flex", flexDirection:"column",
-        alignItems:"center", justifyContent:"center", padding:"80px 24px 60px",
-        position:"relative", overflow:"hidden", textAlign:"center" }}>
-        <div style={{ position:"absolute", inset:0, pointerEvents:"none",
-          backgroundImage:`radial-gradient(circle, ${T.isDark?"#ffffff08":"#00000006"} 1px, transparent 1px)`,
-          backgroundSize:"30px 30px" }}/>
-        <div style={{ marginBottom:32 }}>
-          <Logo size="lg" scheme="gold" lang={lang}/>
+
+      {/* ══════════ HERO ══════════ */}
+      <section style={{
+        minHeight:"100vh", background:c.gradBg,
+        display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+        padding:"120px 24px 80px", position:"relative", overflow:"hidden",
+      }}>
+        {/* Grid */}
+        <div style={{
+          position:"absolute", inset:0, zIndex:0,
+          backgroundImage:`linear-gradient(${c.border}55 1px,transparent 1px),linear-gradient(90deg,${c.border}55 1px,transparent 1px)`,
+          backgroundSize:"60px 60px",
+          maskImage:"radial-gradient(ellipse at center,black 35%,transparent 75%)",
+        }}/>
+        {/* Orbs */}
+        <div style={{ position:"absolute", top:"10%", right:"6%", width:500, height:500, borderRadius:"50%", background:`radial-gradient(circle,${c.accent}14 0%,transparent 68%)`, pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", bottom:"15%", left:"3%",  width:380, height:380, borderRadius:"50%", background:`radial-gradient(circle,${c.accent4}10 0%,transparent 68%)`, pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", top:"55%", right:"18%",  width:240, height:240, borderRadius:"50%", background:`radial-gradient(circle,${c.accent3}0c 0%,transparent 65%)`, pointerEvents:"none" }}/>
+
+        <div style={{ position:"relative", zIndex:1, textAlign:"center", maxWidth:860 }}>
+          {/* Badge */}
+          <div style={{
+            display:"inline-flex", alignItems:"center", gap:8,
+            background:`${c.accent}18`, border:`1px solid ${c.accent}44`,
+            borderRadius:100, padding:"7px 20px", marginBottom:30,
+            fontSize:13, color:c.accent, fontWeight:700,
+          }}>
+            <Zap size={13} fill={c.accent}/> {t.hero.badge}
+          </div>
+
+          {/* Headline */}
+          <h1 style={{ margin:"0 0 24px", lineHeight:1.06, fontWeight:900 }}>
+            {rtl ? (
+              <>
+                <span style={{ fontSize:"clamp(28px,5vw,56px)", display:"block", color:c.text, fontWeight:700 }}>{t.hero.line1}</span>
+                <span style={{ fontSize:"clamp(52px,10vw,110px)", display:"block", fontStyle:"italic",
+                  background:`linear-gradient(135deg,${c.accent},${c.accent2},${c.accent3})`,
+                  WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>
+                  {t.hero.brand}
+                </span>
+                <span style={{ fontSize:"clamp(20px,3.5vw,42px)", display:"block", color:c.textSub, fontWeight:600 }}>{t.hero.line2}</span>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize:"clamp(52px,9vw,100px)", display:"block", fontStyle:"italic",
+                  background:`linear-gradient(135deg,${c.accent},${c.accent2},${c.accent3})`,
+                  WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>
+                  {t.hero.line1}
+                </span>
+                <span style={{ fontSize:"clamp(22px,4vw,46px)", display:"block", color:c.text, fontWeight:700 }}>
+                  {t.hero.brand} {t.hero.line2}
+                </span>
+              </>
+            )}
+          </h1>
+
+          <p style={{ fontSize:"clamp(15px,1.8vw,18px)", color:c.textSub, margin:"0 auto 44px", maxWidth:620, lineHeight:1.75 }}>
+            {t.hero.desc}
+          </p>
+
+          <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap" }}>
+            <button onClick={()=>go("login-section")} style={{
+              background:`linear-gradient(135deg,${c.accent},${c.accent2})`,
+              color:"#000", border:"none", borderRadius:14,
+              padding:"15px 40px", fontSize:15, fontWeight:800, cursor:"pointer",
+              boxShadow:`0 10px 36px ${c.accent}44`,
+              display:"flex", alignItems:"center", gap:8, fontFamily:"'Tajawal',sans-serif",
+            }}>
+              {t.hero.cta1}
+              <ArrowRight size={16} style={{ transform:rtl?"rotate(180deg)":"none" }}/>
+            </button>
+            <button onClick={()=>go("products-section")} style={{
+              background:"transparent", color:c.text,
+              border:`1.5px solid ${c.border}`, borderRadius:14,
+              padding:"15px 34px", fontSize:15, fontWeight:700, cursor:"pointer",
+              fontFamily:"'Tajawal',sans-serif", transition:"border-color .2s",
+            }}
+              onMouseEnter={e=>(e.currentTarget.style.borderColor=c.accent)}
+              onMouseLeave={e=>(e.currentTarget.style.borderColor=c.border)}
+            >
+              {t.hero.cta2}
+            </button>
+          </div>
         </div>
-        <h1 style={{ fontSize:"clamp(28px,5vw,56px)", fontWeight:900, lineHeight:1.2, maxWidth:700, marginBottom:20 }}>
-          <span style={{ background:"linear-gradient(135deg,#f59e0b,#f97316)",
-            WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>
-            {lang==="ar" ? "ابنِ مستقبلك الرقمي" : "Build Your Digital Future"}
-          </span>
-          <br/>
-          <span style={{ color:T.text }}>{lang==="ar" ? "معنا اليوم" : "With Us Today"}</span>
-        </h1>
-        <p style={{ fontSize:16, color:T.sub, maxWidth:520, lineHeight:1.8, marginBottom:40 }}>
-          {lang==="ar"
-            ? "سجّل الآن وابدأ رحلتك الرقمية مع عرباوي"
-            : "Register now and start your digital journey with Arabaawy"}
-        </p>
-        <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
-          <button onClick={()=>{ setRegTab("investor"); setModal("register"); setRStep(1); setRDone(false) }}
-            style={{ padding:"13px 32px", borderRadius:12, border:"none",
-              background:"linear-gradient(135deg,#8b5cf6,#d97706)",
-              color:"#fff", fontWeight:800, fontSize:15,
-              fontFamily:"Cairo,Tajawal,sans-serif", cursor:"pointer" }}>
-            {lang==="ar"?"سجّل كمستثمر":"Register as Investor"}
-          </button>
-          <button onClick={()=>{ setRegTab("partner"); setModal("register"); setRStep(1); setRDone(false) }}
-            style={{ padding:"13px 32px", borderRadius:12,
-              border:"1.5px solid #3b82f6", background:"transparent",
-              color:"#3b82f6", fontWeight:800, fontSize:15,
-              fontFamily:"Cairo,Tajawal,sans-serif", cursor:"pointer" }}>
-            {lang==="ar"?"سجّل كشريك":"Register as Partner"}
-          </button>
+
+        <div style={{
+          position:"absolute", bottom:28, left:"50%", transform:"translateX(-50%)",
+          display:"flex", flexDirection:"column", alignItems:"center", gap:5,
+          color:c.textSub, fontSize:11, cursor:"pointer",
+          animation:"bounce 2.2s ease-in-out infinite",
+        }} onClick={()=>go("stats-section")}>
+          <span>{t.hero.scroll}</span>
+          <ChevronDown size={18}/>
         </div>
       </section>
 
-      {/* ══════ FOOTER ══════ */}
-      <footer style={{ padding:"24px", textAlign:"center",
-        borderTop:`1px solid ${T.border}`, color:T.sub, fontSize:12 }}>
-        <Logo size="xs" scheme="gold" lang={lang}/>
-        <p style={{ marginTop:12 }}>
-          {lang==="ar"?"© 2025 عرباوي — جميع الحقوق محفوظة":"© 2025 Arabaawy — All rights reserved"}
-        </p>
-      </footer>
-
-      {/* MODALS */}
-      {modal && (
-        <div onClick={e=>{ if(e.target===e.currentTarget) setModal(null) }}
-          style={{ position:"fixed", inset:0, zIndex:200,
-            background:"rgba(0,0,0,0.8)", backdropFilter:"blur(12px)",
-            display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-          <div className="animate-scaleIn" style={{
-            width:"100%", maxWidth: modal==="register" ? 440 : 390,
-            background:T.card, border:`1.5px solid ${accent}50`,
-            borderRadius:20, padding:"28px 24px",
-            boxShadow:`0 0 60px ${accent}20`,
-            maxHeight:"92vh", overflowY:"auto", position:"relative",
-          }}>
-            <div style={{ position:"absolute", top:0, left:"20%", right:"20%", height:2,
-              background:`linear-gradient(90deg,transparent,${accent},${accent2},transparent)`,
-              borderRadius:"0 0 6px 6px" }}/>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
-              <Logo size="xs" scheme={loginScheme} lang={lang}/>
-              <button onClick={()=>setModal(null)} style={{
-                width:32, height:32, borderRadius:8,
-                border:`1px solid ${T.border}`, background:T.surface,
-                color:T.sub, cursor:"pointer",
-                display:"flex", alignItems:"center", justifyContent:"center",
-              }}><X size={14}/></button>
+      {/* ══════════ STATS ══════════ */}
+      <section id="stats-section" style={{ padding:"60px 24px", background:c.bg2, borderTop:`1px solid ${c.border}`, borderBottom:`1px solid ${c.border}` }}>
+        <div style={{ maxWidth:960, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:32 }}>
+          {t.stats.map((s,i)=>(
+            <div key={i} style={{ textAlign:"center" }}>
+              <div style={{ fontSize:"clamp(30px,4.5vw,50px)", fontWeight:900, fontStyle:"italic",
+                background:`linear-gradient(135deg,${c.accent},${c.accent2})`,
+                WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>
+                <AnimCounter val={s.val}/>
+              </div>
+              <div style={{ color:c.textSub, fontSize:14, fontWeight:600, marginTop:5 }}>{s.label}</div>
             </div>
+          ))}
+        </div>
+      </section>
 
-            {(modal==="login" || modal==="admin") && (
-              <div>
-                <h2 style={{ fontSize:17, fontWeight:900, color:T.text, marginBottom:4 }}>
-                  {modal==="admin" ? "🛡️ بوابة المدراء" : lang==="ar"?"تسجيل الدخول":"Sign In"}
-                </h2>
-                <p style={{ fontSize:12, color:T.sub, marginBottom:20 }}>
-                  {modal==="admin" ? "للمدراء والمشرفين فقط" : lang==="ar"?"أدخل بياناتك":"Enter your credentials"}
-                </p>
-                <div style={{ display:"flex", flexDirection:"column", gap:13 }}>
-                  <div>
-                    <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
-                      {lang==="ar"?"رمز الدخول":"Access Code"}
-                    </label>
-                    <div style={{ position:"relative" }}>
-                      <input type="text" value={lCode} placeholder={lang==="ar"?"أدخل رمزك":"Your code"}
-                        onChange={e=>setLCode(e.target.value)}
-                        onKeyDown={e=>e.key==="Enter"&&doLogin(modal==="admin")}
-                        style={{ ...inp, padding:"11px 38px 11px 12px" }}
-                        onFocus={e=>(e.target.style.borderColor=accent)}
-                        onBlur={e=>(e.target.style.borderColor=T.border)}/>
-                      <KeyRound size={14} style={{ position:"absolute", top:"50%", right:12,
-                        transform:"translateY(-50%)", color:accent, pointerEvents:"none" }}/>
+      {/* ══════════ PRODUCTS ══════════ */}
+      <section id="products-section" style={{ padding:"100px 24px", background:c.bg }}>
+        <div style={{ maxWidth:1160, margin:"0 auto" }}>
+          <SecHead title={t.productsTitle} sub={t.productsSub} accent={c.accent}/>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))", gap:20 }}>
+            {products.map((p,i)=>{
+              const Icon = p.icon
+              return (
+                <div key={i} style={{
+                  background:c.card, border:`1px solid ${c.border}`,
+                  borderRadius:22, padding:p.featured?"34px 28px":"24px 22px",
+                  position:"relative", overflow:"hidden", cursor:"pointer",
+                  borderTop:`3px solid ${p.color}`,
+                  transition:"all .3s",
+                }}
+                  onMouseEnter={e=>{ const el=e.currentTarget as HTMLDivElement; el.style.transform="translateY(-6px)"; el.style.boxShadow=`0 20px 56px ${p.color}24,0 8px 24px rgba(0,0,0,.3)` }}
+                  onMouseLeave={e=>{ const el=e.currentTarget as HTMLDivElement; el.style.transform="none"; el.style.boxShadow="none" }}
+                >
+                  {/* glow bg */}
+                  <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:`radial-gradient(circle,${p.color}14 0%,transparent 65%)`, pointerEvents:"none" }}/>
+                  <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18 }}>
+                    <div style={{ width:48, height:48, borderRadius:13, background:`${p.color}18`, border:`1px solid ${p.color}33`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                      <Icon size={22} color={p.color}/>
+                    </div>
+                    <div style={{ display:"flex", gap:5, flexDirection:"column", alignItems:"flex-end" }}>
+                      <Pill label={p.tag} color={p.color}/>
+                      {p.badge && <Pill label={p.badge} color={
+                        p.badge==="قريباً"||p.badge==="Soon" ? "#A855F7" :
+                        p.badge==="حصري"||p.badge==="Exclusive" ? "#FF3D6B" : p.color
+                      }/>}
                     </div>
                   </div>
-                  <div>
-                    <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
-                      {lang==="ar"?"كلمة المرور":"Password"}
-                    </label>
-                    <div style={{ position:"relative" }}>
-                      <input type={lShow?"text":"password"} value={lPass}
-                        placeholder={lang==="ar"?"كلمة المرور":"Password"}
-                        onChange={e=>setLPass(e.target.value)}
-                        onKeyDown={e=>e.key==="Enter"&&doLogin(modal==="admin")}
-                        style={{ ...inp, padding:"11px 38px 11px 38px" }}
-                        onFocus={e=>(e.target.style.borderColor=accent)}
-                        onBlur={e=>(e.target.style.borderColor=T.border)}/>
-                      <Lock size={14} style={{ position:"absolute", top:"50%", right:12,
-                        transform:"translateY(-50%)", color:accent, pointerEvents:"none" }}/>
-                      <button type="button" onClick={()=>setLShow(s=>!s)} style={{
-                        position:"absolute", top:"50%", left:10, transform:"translateY(-50%)",
-                        background:"none", border:"none", color:T.sub, cursor:"pointer", padding:0, display:"flex" }}>
-                        {lShow?<EyeOff size={14}/>:<Eye size={14}/>}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ textAlign:"left", margin:"10px 0 16px" }}>
-                  <button onClick={()=>router.push("/recovery")} style={{
-                    background:"none", border:"none", fontSize:11.5,
-                    color:accent, cursor:"pointer", fontFamily:"Cairo,Tajawal,sans-serif" }}>
-                    {lang==="ar"?"نسيت كلمة المرور؟":"Forgot password?"}
+                  <h3 style={{ margin:"0 0 10px", fontSize:p.featured?18:15, fontWeight:800, color:c.text }}>{p.name}</h3>
+                  <p style={{ margin:"0 0 20px", fontSize:13, color:c.textSub, lineHeight:1.7 }}>{p.desc}</p>
+                  <button onClick={()=>go("login-section")} style={{
+                    padding:"9px 16px", borderRadius:10, border:"none",
+                    background:`${p.color}18`, color:p.color, fontSize:12, fontWeight:800,
+                    cursor:"pointer", fontFamily:"'Tajawal',sans-serif",
+                    display:"flex", alignItems:"center", gap:6,
+                  }}>
+                    {t.explore} <ArrowRight size={12} style={{ transform:rtl?"rotate(180deg)":"none" }}/>
                   </button>
                 </div>
-                {lErr && (
-                  <div style={{ marginBottom:14, padding:"9px 13px", borderRadius:9,
-                    fontSize:13, textAlign:"center", color:"#f87171",
-                    background:"#f8717115", border:"1px solid #f8717130" }}>{lErr}</div>
-                )}
-                <button onClick={()=>doLogin(modal==="admin")} disabled={lLoad} style={{
-                  width:"100%", height:46, borderRadius:11, border:"none",
-                  cursor: lLoad?"not-allowed":"pointer", fontSize:14, fontWeight:800,
-                  fontFamily:"Cairo,Tajawal,sans-serif",
-                  background: lLoad ? T.muted : `linear-gradient(135deg,${accent},${accent2})`,
-                  color: T.isDark ? "#000" : "#fff", transition:"all .2s",
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════ LOGIN CARD ══════════ */}
+      <section id="login-section" style={{ padding:"100px 24px", background:c.bg2, borderTop:`1px solid ${c.border}` }}>
+        <div style={{ maxWidth:500, margin:"0 auto" }}>
+          <div style={{ display:"flex", justifyContent:"center", marginBottom:12 }}>
+            <Logo size="lg" animate/>
+          </div>
+          <p style={{ textAlign:"center", color:c.textSub, fontSize:14, marginBottom:38 }}>{t.loginSub}</p>
+
+          <div style={{
+            background:c.card, border:`1.5px solid ${c.border}`,
+            borderRadius:26, padding:"38px 34px",
+            boxShadow:c.shadow,
+          }}>
+            {/* Tabs */}
+            <div style={{ display:"flex", borderRadius:14, background:c.bg2, border:`1px solid ${c.border}`, padding:4, gap:4, marginBottom:28 }}>
+              {(["investor","partner"] as const).map(tp=>(
+                <button key={tp} onClick={()=>setTab(tp)} style={{
+                  flex:1, padding:"11px 4px", borderRadius:10, fontSize:14, fontWeight:700,
+                  border:"none", cursor:"pointer", transition:"all .2s",
+                  background:tab===tp ? `linear-gradient(135deg,${c.accent},${c.accent2})` : "transparent",
+                  color:tab===tp ? "#000" : c.textSub,
+                  fontFamily:"'Tajawal',sans-serif",
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:6,
                 }}>
-                  {lLoad ? "..." : lang==="ar"?"دخول →":"Sign In →"}
+                  {tp==="investor"?<TrendingUp size={13}/>:<Briefcase size={13}/>}
+                  {tp==="investor"?t.investor:t.partner}
                 </button>
-                {modal==="login" && (
-                  <p style={{ textAlign:"center", marginTop:16, fontSize:12.5, color:T.sub }}>
-                    {lang==="ar"?"ليس لديك حساب؟ ":"No account? "}
-                    <button onClick={()=>{ setModal("register"); setRStep(1); setRDone(false) }} style={{
-                      background:"none", border:"none", color:accent, fontWeight:800,
-                      cursor:"pointer", fontSize:12.5, fontFamily:"Cairo,Tajawal,sans-serif" }}>
-                      {lang==="ar"?"سجّل الآن":"Register"}
-                    </button>
-                  </p>
-                )}
+              ))}
+              {/* Admin micro-btn */}
+              <button onClick={()=>setTab("admin")} title={t.admin} style={{
+                padding:"11px 12px", borderRadius:10, border:"none", cursor:"pointer",
+                background:tab==="admin" ? c.bg3 : "transparent",
+                color:tab==="admin" ? c.textSub : c.border,
+                fontFamily:"'Tajawal',sans-serif",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                opacity:tab==="admin"?1:0.38, transition:"opacity .2s",
+              }}>
+                <ShieldCheck size={13}/>
+              </button>
+            </div>
+
+            {/* Code field */}
+            <div style={{ marginBottom:16 }}>
+              <label style={{ display:"block", fontSize:12, fontWeight:700, color:c.textSub, marginBottom:6 }}>{t.code}</label>
+              <div style={{ position:"relative" }}>
+                <input value={code} onChange={e=>setCode(e.target.value)} placeholder={t.codePh}
+                  style={inp} onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+                  onFocus={e=>(e.target.style.borderColor=c.accent)}
+                  onBlur={e=>(e.target.style.borderColor=c.border)}/>
+                <KeyRound size={14} style={{ position:"absolute", top:"50%", transform:"translateY(-50%)", right:14, color:c.accent }}/>
+              </div>
+            </div>
+
+            {/* Password field */}
+            <div style={{ marginBottom:16 }}>
+              <label style={{ display:"block", fontSize:12, fontWeight:700, color:c.textSub, marginBottom:6 }}>{t.pass}</label>
+              <div style={{ position:"relative" }}>
+                <input type={showP?"text":"password"} value={pass} onChange={e=>setPass(e.target.value)} placeholder={t.passPh}
+                  style={{ ...inp, paddingLeft:44 }} onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+                  onFocus={e=>(e.target.style.borderColor=c.accent)}
+                  onBlur={e=>(e.target.style.borderColor=c.border)}/>
+                <Lock size={14} style={{ position:"absolute", top:"50%", transform:"translateY(-50%)", right:14, color:c.accent }}/>
+                <button onClick={()=>setShowP(!showP)} style={{ position:"absolute", top:"50%", transform:"translateY(-50%)", left:14, background:"none", border:"none", cursor:"pointer", color:c.textSub, padding:0 }}>
+                  {showP?<EyeOff size={14}/>:<Eye size={14}/>}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div style={{ marginBottom:14, padding:"11px 14px", borderRadius:10, background:"#dc262610", border:"1px solid #dc262644", color:"#ef4444", fontSize:13, textAlign:"center" }}>
+                {error}
               </div>
             )}
 
-            {modal==="register" && (
-              <div>
-                <h2 style={{ fontSize:16, fontWeight:900, color:T.text, marginBottom:16 }}>
-                  {lang==="ar"?"إنشاء حساب جديد":"Create Account"}
-                </h2>
-                {!rDone && (
-                  <div style={{ display:"flex", background:T.surface, border:`1px solid ${T.border}`,
-                    borderRadius:12, padding:3, marginBottom:20, gap:4 }}>
-                    {([
-                      { id:"partner" as const, label:lang==="ar"?"🤝 شريك":"🤝 Partner", c:ROLE_COLORS.partner },
-                      { id:"investor" as const, label:lang==="ar"?"📈 مستثمر":"📈 Investor", c:ROLE_COLORS.investor },
-                    ]).map(({ id, label, c }) => (
-                      <button key={id} onClick={()=>{ setRegTab(id); setRStep(1); setRErr("") }} style={{
-                        flex:1, padding:"9px 6px", borderRadius:9, border:"none",
-                        fontWeight:700, fontSize:13, fontFamily:"Cairo,Tajawal,sans-serif", cursor:"pointer",
-                        background: regTab===id ? `linear-gradient(135deg,${c.a},${c.b})` : "transparent",
-                        color: regTab===id ? "#fff" : T.sub, transition:"all .2s",
-                      }}>{label}</button>
-                    ))}
-                  </div>
-                )}
-                {!rDone && (
-                  <div style={{ display:"flex", gap:6, marginBottom:22 }}>
-                    {[1,2,3].map(s => (
-                      <div key={s} style={{ flex:1, height:4, borderRadius:99,
-                        background: s<=rStep ? `linear-gradient(90deg,${RC.a},${RC.b})` : T.muted,
-                        transition:"background .3s" }}/>
-                    ))}
-                  </div>
-                )}
-                {rDone && (
-                  <div style={{ textAlign:"center", padding:"10px 0" }}>
-                    <div style={{ fontSize:52, marginBottom:12 }}>{regTab==="partner"?"🤝":"💼"}</div>
-                    <h3 style={{ fontSize:18, fontWeight:900, color:T.text, marginBottom:8 }}>
-                      {lang==="ar"?"تم إنشاء حسابك!":"Account Created!"}
-                    </h3>
-                    <div style={{ padding:"14px 16px", borderRadius:12,
-                      background:`${RC.a}10`, border:`1px solid ${RC.a}30`, marginBottom:20 }}>
-                      <p style={{ fontSize:11, color:T.sub, marginBottom:8 }}>{lang==="ar"?"رمز الدخول":"Access Code"}</p>
-                      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
-                        <span style={{ fontSize:22, fontWeight:900, color:RC.a, letterSpacing:"0.08em" }}>{rCode}</span>
-                        <button onClick={()=>{ navigator.clipboard.writeText(rCode); setRCopied(true); setTimeout(()=>setRCopied(false),2000) }}
-                          style={{ background:`${RC.a}15`, border:`1px solid ${RC.a}40`, borderRadius:8,
-                            padding:"6px 10px", cursor:"pointer", display:"flex", alignItems:"center",
-                            gap:5, color:RC.a, fontSize:11, fontWeight:700, fontFamily:"Cairo,Tajawal,sans-serif" }}>
-                          {rCopied ? <><Check size={12}/>{lang==="ar"?"نُسخ":"Copied"}</> : <><Copy size={12}/>{lang==="ar"?"نسخ":"Copy"}</>}
-                        </button>
-                      </div>
-                    </div>
-                    <button onClick={()=>setModal(null)} style={{
-                      width:"100%", height:44, borderRadius:11, border:"none",
-                      background:`linear-gradient(135deg,${RC.a},${RC.b})`,
-                      color:"#fff", fontWeight:800, fontSize:14,
-                      fontFamily:"Cairo,Tajawal,sans-serif", cursor:"pointer" }}>
-                      {lang==="ar"?"الدخول للمنصة →":"Enter Platform →"}
-                    </button>
-                  </div>
-                )}
-                {!rDone && rStep===1 && (
-                  <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                    <div>
-                      <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
-                        {lang==="ar"?"الاسم الكامل":"Full Name"}
-                      </label>
-                      <input style={inp} placeholder={lang==="ar"?"محمد أحمد":"John Doe"} value={rName}
-                        onChange={e=>setRName(e.target.value)}
-                        onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}/>
-                    </div>
-                    <div>
-                      <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
-                        {lang==="ar"?"رقم الهاتف":"Phone"}
-                      </label>
-                      <input style={inp} placeholder="01xxxxxxxxx" type="tel" value={rPhone}
-                        onChange={e=>setRPhone(e.target.value)}
-                        onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}/>
-                    </div>
-                    {regTab==="investor" && (
-                      <div>
-                        <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
-                          {lang==="ar"?"رقم الهوية":"National ID"}
-                        </label>
-                        <input style={inp} placeholder="14 رقم" value={rNatId}
-                          onChange={e=>setRNatId(e.target.value)}
-                          onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}/>
-                      </div>
-                    )}
-                    {regTab==="partner" && (
-                      <div>
-                        <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
-                          {lang==="ar"?"القسم":"Department"}
-                        </label>
-                        <select style={{ ...inp, cursor:"pointer" }} value={rDept} onChange={e=>setRDept(e.target.value)}
-                          onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}>
-                          <option value="">{lang==="ar"?"-- اختر قسمك --":"-- Select --"}</option>
-                          {DEPARTMENTS.map(d=>(
-                            <option key={d.code} value={d.code} style={{ background:T.card }}>
-                              {d.name} ({d.code})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    {rErr && <p style={{ color:"#f87171", fontSize:12, textAlign:"center" }}>{rErr}</p>}
-                    <button onClick={()=>{
-                      setRErr("")
-                      if (!rName.trim()) { setRErr("أدخل الاسم"); return }
-                      if (!rPhone.trim()) { setRErr("أدخل الهاتف"); return }
-                      if (regTab==="investor" && !rNatId.trim()) { setRErr("أدخل رقم الهوية"); return }
-                      if (regTab==="partner" && !rDept) { setRErr("اختر القسم"); return }
-                      setRStep(2)
-                    }} style={{
-                      width:"100%", height:44, borderRadius:11, border:"none",
-                      background:`linear-gradient(135deg,${RC.a},${RC.b})`,
-                      color:"#fff", fontWeight:800, fontSize:14,
-                      fontFamily:"Cairo,Tajawal,sans-serif", cursor:"pointer" }}>
-                      {lang==="ar"?"التالي →":"Next →"}
-                    </button>
-                  </div>
-                )}
-                {!rDone && rStep===2 && (
-                  <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                    <div>
-                      <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
-                        {lang==="ar"?"كلمة المرور":"Password"}
-                      </label>
-                      <div style={{ position:"relative" }}>
-                        <input type={rShow?"text":"password"} style={{ ...inp, paddingLeft:36 }}
-                          placeholder={lang==="ar"?"6 أحرف على الأقل":"Min 6 chars"} value={rPw}
-                          onChange={e=>setRPw(e.target.value)}
-                          onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}/>
-                        <button type="button" onClick={()=>setRShow(s=>!s)} style={{
-                          position:"absolute", top:"50%", left:10, transform:"translateY(-50%)",
-                          background:"none", border:"none", color:T.sub, cursor:"pointer", padding:0, display:"flex" }}>
-                          {rShow?<EyeOff size={14}/>:<Eye size={14}/>}
-                        </button>
-                      </div>
-                      <PwBar pw={rPw} sub={T.sub}/>
-                    </div>
-                    <div>
-                      <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
-                        {lang==="ar"?"تأكيد كلمة المرور":"Confirm Password"}
-                      </label>
-                      <input type="password" style={inp} placeholder={lang==="ar"?"أعد الكتابة":"Repeat"} value={rPw2}
-                        onChange={e=>setRPw2(e.target.value)}
-                        onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}/>
-                    </div>
-                    {rErr && <p style={{ color:"#f87171", fontSize:12, textAlign:"center" }}>{rErr}</p>}
-                    <div style={{ display:"flex", gap:8 }}>
-                      <button onClick={()=>setRStep(1)} style={{
-                        flex:1, height:44, borderRadius:11,
-                        border:`1px solid ${T.border}`, background:"transparent",
-                        color:T.sub, cursor:"pointer", fontWeight:700,
-                        fontFamily:"Cairo,Tajawal,sans-serif" }}>
-                        {lang==="ar"?"رجوع":"Back"}
-                      </button>
-                      <button onClick={()=>{
-                        setRErr("")
-                        if (rPw.length<6) { setRErr("6 أحرف على الأقل"); return }
-                        if (rPw!==rPw2) { setRErr("كلمتا المرور غير متطابقتين"); return }
-  setRStep(3)
-                      }} style={{
-                        flex:2, height:44, borderRadius:11, border:"none",
-                        background:`linear-gradient(135deg,${RC.a},${RC.b})`,
-                        color:"#fff", fontWeight:800, fontSize:14,
-                        fontFamily:"Cairo,Tajawal,sans-serif", cursor:"pointer" }}>
-                        {lang==="ar"?"التالي →":"Next →"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {!rDone && rStep===3 && (
-                  <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                    <div>
-                      <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
-                        {lang==="ar"?"سؤال الأمان":"Security Question"}
-                      </label>
-                      <select style={{ ...inp, cursor:"pointer" }} value={rSecQ} onChange={e=>setRSecQ(e.target.value)}
-                        onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}>
-                        {SECURITY_QUESTIONS.map(q=>(
-                          <option key={q} value={q} style={{ background:T.card }}>{q}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
-                        {lang==="ar"?"الإجابة":"Answer"}
-                      </label>
-                      <input style={inp} placeholder={lang==="ar"?"إجابتك السرية":"Your secret answer"} value={rSecA}
-                        onChange={e=>setRSecA(e.target.value)}
-                        onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}/>
-                    </div>
-                    {regTab==="investor" && (
-                      <div style={{ padding:"10px 12px", borderRadius:10,
-                        background:`${RC.a}0a`, border:`1px solid ${RC.a}25` }}>
-                        <p style={{ fontSize:11, color:T.sub, margin:0, lineHeight:1.7 }}>
-                          🏦 {lang==="ar"?"سيتم إنشاء محفظة رقمية خاصة بك فور التسجيل":"A digital wallet will be created upon registration"}
-                        </p>
-                      </div>
-                    )}
-                    {rErr && <p style={{ color:"#f87171", fontSize:12, textAlign:"center" }}>{rErr}</p>}
-                    <div style={{ display:"flex", gap:8 }}>
-                      <button onClick={()=>setRStep(2)} style={{
-                        flex:1, height:44, borderRadius:11,
-                        border:`1px solid ${T.border}`, background:"transparent",
-                        color:T.sub, cursor:"pointer", fontWeight:700,
-                        fontFamily:"Cairo,Tajawal,sans-serif" }}>
-                        {lang==="ar"?"رجوع":"Back"}
-                      </button>
-                      <button onClick={()=>{
-                        if (!rSecA.trim()) { setRErr("أدخل إجابة سؤال الأمان"); return }
-                        doRegister()
-                      }} disabled={rLoad} style={{
-                        flex:2, height:44, borderRadius:11, border:"none",
-                        cursor: rLoad?"not-allowed":"pointer",
-                        background: rLoad ? T.muted : `linear-gradient(135deg,${RC.a},${RC.b})`,
-                        color:"#fff", fontWeight:800, fontSize:14,
-                        fontFamily:"Cairo,Tajawal,sans-serif" }}>
-                        {rLoad ? "..." : lang==="ar"?"إنشاء الحساب →":"Create Account →"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            <div style={{ textAlign:"left", marginBottom:20 }}>
+              <button onClick={()=>router.push("/recovery")} style={{ background:"none", border:"none", color:c.accent, fontSize:12, cursor:"pointer", fontFamily:"'Tajawal',sans-serif" }}>
+                {t.forgot}
+              </button>
+            </div>
+
+            <button onClick={handleLogin} disabled={loading} style={{
+              width:"100%", padding:14, borderRadius:14, border:"none",
+              background:loading ? c.bg3 : `linear-gradient(135deg,${c.accent},${c.accent2})`,
+              color:"#000", fontSize:15, fontWeight:800,
+              cursor:loading?"not-allowed":"pointer",
+              fontFamily:"'Tajawal',sans-serif",
+              boxShadow:loading?"none":`0 8px 28px ${c.accent}44`,
+              transition:"all .2s",
+            }}>
+              {loading?t.logging:t.login}
+            </button>
+
+            <div style={{ display:"flex", alignItems:"center", gap:12, margin:"24px 0" }}>
+              <div style={{ flex:1, height:1, background:c.border }}/>
+              <span style={{ color:c.textSub, fontSize:12 }}>{rtl?"أو سجّل كـ":"or register as"}</span>
+              <div style={{ flex:1, height:1, background:c.border }}/>
+            </div>
+
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={()=>router.push("/partner-register")} style={{
+                flex:1, padding:12, borderRadius:12, cursor:"pointer",
+                background:"transparent", border:`1.5px solid ${c.accent}66`,
+                color:c.accent, fontSize:13, fontWeight:700,
+                fontFamily:"'Tajawal',sans-serif",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:6, transition:"background .2s",
+              }}
+                onMouseEnter={e=>(e.currentTarget.style.background=`${c.accent}11`)}
+                onMouseLeave={e=>(e.currentTarget.style.background="transparent")}
+              >
+                <Briefcase size={13}/> {t.regPartner}
+              </button>
+              <button onClick={()=>router.push("/investor-register")} style={{
+                flex:1, padding:12, borderRadius:12, cursor:"pointer",
+                background:"transparent", border:`1.5px solid ${c.accent2}66`,
+                color:c.accent2, fontSize:13, fontWeight:700,
+                fontFamily:"'Tajawal',sans-serif",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:6, transitionms:"center", justifyContent:"center", gap:6, transition:"background .2s",
+              }}
+                onMouseEnter={e=>(e.currentTarget.style.background=`${c.accent2}11`)}
+                onMouseLeave={e=>(e.currentTarget.style.background="transparent")}
+              >
+                <TrendingUp size={13}/> {t.regInvestor}
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      </section>
+
+      {/* ══════════ SERVICES ══════════ */}
+      <section id="services-section" style={{ padding:"100px 24px", background:c.bg, borderTop:`1px solid ${c.border}` }}>
+        <div style={{ maxWidth:1160, margin:"0 auto" }}>
+          <SecHead title={t.servicesTitle} sub={t.servicesSub} accent={c.accent}/>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))", gap:18 }}>
+            {services.map((s,i)=>{
+              const Icon=s.icon
+              return (
+                <div key={i} style={{
+                  background:c.card, border:`1px solid ${c.border}`,
+                  borderRadius:18, padding:"22px 20px",
+                  display:"flex", gap:16, alignItems:"flex-start",
+                  transition:"border-color .2s, transform .2s",
+                }}
+                  onMouseEnter={e=>{ const el=e.currentTarget as HTMLDivElement; el.style.borderColor=c.accent; el.style.transform="translateY(-3px)" }}
+                  onMouseLeave={e=>{ const el=e.currentTarget as HTMLDivElement; el.style.borderColor=c.border; el.style.transform="none" }}
+                >
+                  <div style={{ width:42, height:42, borderRadius:11, flexShrink:0, background:`${c.accent}18`, border:`1px solid ${c.accent}33`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <Icon size={18} color={c.accent}/>
+                  </div>
+                  <div>
+                    <h3 style={{ margin:"0 0 6px", fontSize:15, fontWeight:800, color:c.text }}>{s.title}</h3>
+                    <p style={{ margin:0, fontSize:13, color:c.textSub, lineHeight:1.65 }}>{s.desc}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════ WHY ══════════ */}
+      <section id="investors-section" style={{ padding:"100px 24px", background:c.bg2, borderTop:`1px solid ${c.border}` }}>
+        <div style={{ maxWidth:1160, margin:"0 auto" }}>
+          <SecHead title={t.whyTitle} sub={t.whySub} accent={c.accent}/>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(310px,1fr))", gap:22 }}>
+            {why.map((w,i)=>(
+              <div key={i} style={{
+                background:c.card, border:`1px solid ${c.border}`,
+                borderRadius:22, padding:30,
+                borderTop:`3px solid ${w.color}`,
+                transition:"transform .25s, box-shadow .25s",
+              }}
+                onMouseEnter={e=>{ const el=e.currentTarget as HTMLDivElement; el.style.transform="translateY(-5px)"; el.style.boxShadow=`0 14px 44px ${w.color}22` }}
+                onMouseLeave={e=>{ const el=e.currentTarget as HTMLDivElement; el.style.transform="none"; el.style.boxShadow="none" }}
+              >
+                <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:22 }}>
+                  <div style={{ width:42, height:42, borderRadius:11, background:`${w.color}18`, border:`1px solid ${w.color}33`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <w.Icon size={20} color={w.color}/>
+                  </div>
+                  <h3 style={{ margin:0, fontSize:17, fontWeight:900, color:c.text }}>{w.title}</h3>
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:11 }}>
+                  {w.items.map((item,j)=>(
+                    <div key={j} style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
+                      <CheckCircle size={14} color={w.color} style={{ flexShrink:0, marginTop:2 }}/>
+                      <span style={{ fontSize:13, color:c.textSub, lineHeight:1.5 }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={()=>go("login-section")} style={{
+                  marginTop:24, width:"100%", padding:"10px 0", borderRadius:10,
+                  background:`${w.color}18`, border:`1px solid ${w.color}44`,
+                  color:w.color, fontSize:13, fontWeight:700, cursor:"pointer",
+                  fontFamily:"'Tajawal',sans-serif",
+                }}>
+                  {t.getStarted}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+      {/* ══════════ CONTACT ══════════ */}
+      <section id="contact-section" style={{ padding:"80px 24px", background:c.bg, borderTop:`1px solid ${c.border}` }}>
+        <div style={{ maxWidth:760, margin:"0 auto", textAlign:"center" }}>
+          <SecHead title={t.contactTitle} sub={t.contactSub} accent={c.accent}/>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:14 }}>
+            {[
+              { Icon:Phone,   val:t.contact.phone   },
+              { Icon:Mail,    val:t.contact.email   },
+              { Icon:MapPin,  val:t.contact.address },
+              { Icon:Clock,   val:t.contact.hours   },
+            ].map((item,i)=>(
+              <div key={i} style={{
+                background:c.card, border:`1px solid ${c.border}`,
+                borderRadius:16, padding:"20px 18px",
+                display:"flex", alignItems:"center", gap:14,
+                transition:"border-color .2s",
+              }}
+                onMouseEnter={e=>(e.currentTarget.style.borderColor=c.accent)}
+                onMouseLeave={e=>(e.currentTarget.style.borderColor=c.border)}
+              >
+                <div style={{ width:36, height:36, borderRadius:10, background:`${c.accent}18`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <item.Icon size={15} color={c.accent}/>
+                </div>
+                <span style={{ fontSize:13, color:c.text, fontWeight:600 }}>{item.val}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════ FOOTER ══════════ */}
+      <footer style={{ padding:"28px 24px", textAlign:"center", borderTop:`1px solid ${c.border}`, background:c.bg2 }}>
+        <div style={{ display:"flex", justifyContent:"center", marginBottom:12 }}><Logo size="sm"/></div>
+        <p style={{ margin:0, color:c.textSub, fontSize:12 }}>© 2025 {t.footer}</p>
+      </footer>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+        @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(9px)} }
+        *{box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        ::-webkit-scrollbar{width:5px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:#FF6B0055;border-radius:4px}
+      `}</style>
     </div>
   )
 }
