@@ -1,119 +1,218 @@
 "use client"
-import { useId } from "react"
-
-export type LogoScheme = "gold" | "red" | "blue" | "white"
 
 interface LogoProps {
-  size?: "xs" | "sm" | "md" | "lg"
-  scheme?: LogoScheme
-  lang?: "ar" | "en"
+  size?: "sm" | "md" | "lg" | "xl"
+  animate?: boolean
 }
 
-const SCHEMES = {
-  gold:  { a:"#f59e0b", b:"#f97316", bolt:"#fbbf24", boltEnd:"#fb923c" },
-  red:   { a:"#ef4444", b:"#f97316", bolt:"#fde047", boltEnd:"#fb923c" },
-  blue:  { a:"#3b82f6", b:"#06b6d4", bolt:"#ffffff", boltEnd:"#38bdf8" },
-  white: { a:"#ffffff", b:"#cccccc", bolt:"#ffffff", boltEnd:"#aaaaaa" },
-}
+export default function Logo({ size = "md", animate = false }: LogoProps) {
+  const s = {
+    sm: { box: 38,  icon: 24, enSize: 17,  arSize: 10, gap: 9  },
+    md: { box: 50,  icon: 32, enSize: 22,  arSize: 13, gap: 11 },
+    lg: { box: 64,  icon: 42, enSize: 28,  arSize: 16, gap: 13 },
+    xl: { box: 84,  icon: 55, enSize: 38,  arSize: 21, gap: 16 },
+  }[size]
 
-export default function Logo({ size = "md", scheme = "gold", lang = "ar" }: LogoProps) {
-  const uid  = useId().replace(/:/g, "")
-  const C    = SCHEMES[scheme]
-  const dim  = size === "xs" ? 34 : size === "sm" ? 40 : size === "lg" ? 64 : 50
-  const arSz = size === "xs" ? 17 : size === "sm" ? 21 : size === "lg" ? 34 : 26
-  const enSz = size === "xs" ?  7 : size === "sm" ?  8 : size === "lg" ? 12 : 10
-  const gap  = size === "xs" ?  6 : size === "sm" ?  7 : size === "lg" ? 12 : 9
+  const id = `al-${size}`
 
-  const rim  = `rim${uid}`
-  const bolt = `blt${uid}`
-  const glow = `glw${uid}`
-  const clip = `clp${uid}`
+  // Shared gradient stops
+  const G1 = "#FF6B00"
+  const G2 = "#FFD700"
+  const G3 = "#FF3D6B"
+  const G4 = "#00D4FF"
+
+  // Diamond/rhombus clip points (percentage-based for any size)
+  // top, right, bottom, left
+  const half = s.box / 2
+  const pts  = `${half},2 ${s.box - 2},${half} ${half},${s.box - 2} 2,${half}`
 
   return (
-    <div style={{ display:"flex", alignItems:"center", gap, userSelect:"none" }}>
-      <svg width={dim} height={dim} viewBox="0 0 64 64" fill="none" style={{ flexShrink:0 }}>
+    <div style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: s.gap,
+      userSelect: "none",
+      fontFamily: "'Tajawal', 'Inter', sans-serif",
+    }}>
+      {/* ── Geometric Diamond Icon ── */}
+      <svg
+        width={s.box}
+        height={s.box}
+        viewBox={`0 0 ${s.box} ${s.box}`}
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{
+          flexShrink: 0,
+          filter: animate
+            ? `drop-shadow(0 0 ${s.box * 0.35}px #FF6B0066) drop-shadow(0 0 ${s.box * 0.15}px #FF3D6B44)`
+            : `drop-shadow(0 0 ${s.box * 0.22}px #FF6B0044) drop-shadow(0 0 ${s.box * 0.1}px #FF3D6B28)`,
+          animation: animate ? "logoPulse 3s ease-in-out infinite" : "none",
+        }}
+      >
         <defs>
-          <linearGradient id={rim} x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"   stopColor={C.a}/>
-            <stop offset="100%" stopColor={C.b}/>
+          {/* Diamond fill gradient */}
+          <linearGradient id={`${id}-df`} x1="0" y1="0" x2="1" y2="1">
+            <stop stopColor={`${G1}28`} />
+            <stop offset="1" stopColor={`${G4}18`} />
           </linearGradient>
-          <linearGradient id={bolt} x1="32" y1="5" x2="32" y2="59" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"   stopColor={C.bolt}/>
-            <stop offset="100%" stopColor={C.boltEnd}/>
+
+          {/* A-letter gradient */}
+          <linearGradient id={`${id}-ag`} x1="0" y1="0" x2="1" y2="1">
+            <stop stopColor={G1} />
+            <stop offset=".5" stopColor={G2} />
+            <stop offset="1" stopColor={G1} stopOpacity=".7" />
           </linearGradient>
-          <filter id={glow} x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="2.2" result="b"/>
-            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-          <clipPath id={clip}>
-            <polygon points="32,3 60,18 60,46 32,61 4,46 4,18"/>
+
+          {/* Bolt gradient */}
+          <linearGradient id={`${id}-bg`} x1="0" y1="0" x2=".4" y2="1">
+            <stop stopColor={G2} />
+            <stop offset=".45" stopColor={G3} />
+            <stop offset="1" stopColor={G4} />
+          </linearGradient>
+
+          {/* Border gradient */}
+          <linearGradient id={`${id}-border`} x1="0" y1="0" x2="1" y2="1">
+            <stop stopColor={G1} stopOpacity=".9" />
+            <stop offset=".4" stopColor={G2} stopOpacity=".7" />
+            <stop offset="1" stopColor={G4} stopOpacity=".6" />
+          </linearGradient>
+
+          {/* Clip to diamond */}
+          <clipPath id={`${id}-clip`}>
+            <polygon points={pts} />
           </clipPath>
+
+          {/* Glow filter */}
+          <filter id={`${id}-glow`} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.4" result="b" />
+            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
         </defs>
-        <polygon points="32,1 62,17 62,47 32,63 2,47 2,17"
-          fill="none" stroke={C.a} strokeWidth="0.6" opacity="0.3"/>
-        <polygon points="32,3 60,18 60,46 32,61 4,46 4,18"
-          fill={scheme==="white" ? "#ffffff10" : "#00000040"}
-          stroke={`url(#${rim})`} strokeWidth="2"/>
-        <g clipPath={`url(#${clip})`} opacity="0.5">
-          <polygon points="14,54 23,14 28,14 20,54" fill={`url(#${rim})`}/>
-          <polygon points="36,14 41,14 50,54 44,54" fill={`url(#${rim})`} opacity="0.85"/>
-          <rect x="20" y="35" width="24" height="5" rx="2" fill={`url(#${rim})`}/>
+
+        {/* Diamond background fill */}
+        <polygon points={pts} fill={`url(#${id}-df)`} />
+
+        {/* Inner grid texture */}
+        <g clipPath={`url(#${id}-clip)`}>
+          {/* Horizontal lines */}
+          {[.25,.5,.75].map((f, i) => (
+            <line key={`h${i}`}
+              x1={2} y1={s.box * f} x2={s.box - 2} y2={s.box * f}
+              stroke={G1} strokeWidth=".5" strokeOpacity=".15"
+            />
+          ))}
+          {/* Vertical lines */}
+          {[.25,.5,.75].map((f, i) => (
+            <line key={`v${i}`}
+              x1={s.box * f} y1={2} x2={s.box * f} y2={s.box - 2}
+              stroke={G1} strokeWidth=".5" strokeOpacity=".15"
+            />
+          ))}
+          {/* Diagonal accent lines */}
+          <line x1={2} y1={2} x2={s.box - 2} y2={s.box - 2} stroke={G3} strokeWidth=".4" strokeOpacity=".12" />
+          <line x1={s.box - 2} y1={2} x2={2} y2={s.box - 2} stroke={G4} strokeWidth=".4" strokeOpacity=".12" />
         </g>
-        <path d="M35,6 L24,30 L31,30 L26,58 L44,28 L36,28 Z"
-          fill={C.bolt} opacity="0.18" filter={`url(#${glow})`}/>
-        <path d="M35,6 L24,30 L31,30 L26,58 L44,28 L36,28 Z"
-          fill={`url(#${bolt})`} filter={`url(#${glow})`} opacity="0.92"/>
-        <line x1="30" y1="30" x2="20" y2="38" stroke={C.a} strokeWidth="1" strokeLinecap="round" opacity="0.6"/>
-        <line x1="36" y1="28" x2="45" y2="34" stroke={C.b} strokeWidth="1" strokeLinecap="round" opacity="0.55"/>
-        <circle cx="32" cy="3"  r="1.8" fill={C.a} opacity="0.9"/>
-        <circle cx="32" cy="61" r="1.8" fill={C.b} opacity="0.9"/>
-        <circle cx="60" cy="18" r="1.4" fill={C.a} opacity="0.7"/>
-        <circle cx="60" cy="46" r="1.4" fill={C.b} opacity="0.7"/>
-        <circle cx="4"  cy="18" r="1.4" fill={C.a} opacity="0.7"/>
-        <circle cx="4"  cy="46" r="1.4" fill={C.b} opacity="0.7"/>
+
+        {/* Diamond border */}
+        <polygon
+          points={pts}
+          fill="none"
+          stroke={`url(#${id}-border)`}
+          strokeWidth="1.5"
+        />
+
+        {/* Inner diamond accent (smaller, rotated) */}
+        <polygon
+          points={`${half},${s.box*.12} ${s.box*.88},${half} ${half},${s.box*.88} ${s.box*.12},${half}`}
+          fill="none"
+          stroke={G4}
+          strokeWidth=".6"
+          strokeOpacity=".25"
+          strokeDasharray="3 2"
+        />
+
+        {/* ── A Letter ── */}
+        <g clipPath={`url(#${id}-clip)`} filter={`url(#${id}-glow)`}>
+          {/* Scaled to fit diamond: viewBox 0-40 → scaled */}
+          <g transform={`scale(${s.box / 40})`}>
+            {/* A main shape */}
+            <polygon
+              points="20,5 9,33 14,33 20,19 26,33 31,33"
+              fill={`url(#${id}-ag)`}
+              opacity=".92"
+            />
+            {/* A crossbar */}
+            <rect x="13" y="22" width="14" height="2.8" rx="1.4"
+              fill={G2} opacity=".9" />
+
+            {/* Lightning bolt — overlapping A */}
+            <polygon
+              points="23,4 17.5,19 22,19 15,36 29,16 23,16"
+              fill={`url(#${id}-bg)`}
+              opacity=".94"
+            />
+            {/* Bolt inner highlight */}
+            <polygon
+              points="23,8 19.5,19 22,19 17,31 26.5,17.5 23,17.5"
+              fill={G2}
+              opacity=".32"
+            />
+
+            {/* Intersection hotspot */}
+            <circle cx="21" cy="22.5" r="2.2" fill={G3} opacity=".9" />
+            <circle cx="21" cy="22.5" r="1"   fill="#fff" opacity=".8" />
+          </g>
+        </g>
+
+        {/* Corner accent dots */}
+        <circle cx={half}       cy={3}          r="1.5" fill={G2} opacity=".7" />
+        <circle cx={s.box - 3}  cy={half}       r="1.5" fill={G3} opacity=".6" />
+        <circle cx={half}       cy={s.box - 3}  r="1.5" fill={G4} opacity=".6" />
+        <circle cx={3}          cy={half}       r="1.5" fill={G1} opacity=".7" />
       </svg>
 
-      <div style={{ display:"flex", flexDirection:"column", gap: size==="xs" ? 2 : 3 }}>
-        <div style={{ display:"flex", alignItems:"baseline", gap:1, lineHeight:1 }}>
-          <span style={{
-            fontSize: arSz, fontWeight:900,
-            fontFamily:"Cairo,Tajawal,serif", fontStyle:"italic",
-            background:`linear-gradient(135deg,${C.a},${C.b})`,
-            WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
-          }}>
-            {lang === "ar" ? "عرب" : "Arab"}
-          </span>
-          <span style={{
-            fontSize: arSz * 0.82, fontWeight:800,
-            fontFamily:"Cairo,Tajawal,serif", fontStyle:"italic",
-            background:`linear-gradient(135deg,${C.bolt},${C.boltEnd})`,
-            WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
-          }}>
-            {lang === "ar" ? "اوي" : "aawy"}
-          </span>
+      {/* ── Wordmark ── */}
+      <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+
+        {/* English — single unified gradient across "Arabaawy" */}
+        <div style={{
+          fontSize:   s.enSize,
+          fontWeight: 900,
+          fontStyle:  "italic",
+          letterSpacing: "-0.025em",
+          background: `linear-gradient(100deg, ${G1} 0%, ${G2} 38%, ${G3} 65%, ${G4} 100%)`,
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor:  "transparent",
+          backgroundClip: "text",
+          lineHeight: 1.08,
+        }}>
+          Arabaawy
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:3 }}>
-          {[0.3,0.6,0.9].map((op,i) => (
-            <svg key={i} width="5" height="8" viewBox="0 0 5 8">
-              <polyline points="1,1 4,4 1,7" fill="none"
-                stroke={C.a} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" opacity={op}/>
-            </svg>
-          ))}
-          <span style={{
-            fontSize:enSz, fontWeight:700, color:`${C.a}80`,
-            letterSpacing:"0.12em", textTransform:"uppercase",
-            fontFamily:"Cairo,Tajawal,sans-serif", whiteSpace:"nowrap", margin:"0 3px",
-          }}>
-            {lang === "ar" ? "النظام الرقمي" : "Digital Ecosystem"}
-          </span>
-          {[0.9,0.6,0.3].map((op,i) => (
-            <svg key={i} width="5" height="8" viewBox="0 0 5 8">
-              <polyline points="4,1 1,4 4,7" fill="none"
-                stroke={C.b} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" opacity={op}/>
-            </svg>
-          ))}
+
+        {/* Arabic — same gradient direction, slightly smaller, matching weight */}
+        <div style={{
+          fontSize:   s.arSize,
+          fontWeight: 800,
+          fontStyle:  "italic",
+          letterSpacing: "0.08em",
+          marginTop:  s.arSize * 0.15,
+          background: `linear-gradient(100deg, ${G1} 0%, ${G2} 50%, ${G3} 100%)`,
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor:  "transparent",
+          backgroundClip: "text",
+          lineHeight: 1,
+        }}>
+          عرباوي
         </div>
       </div>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@700;800;900&display=swap');
+        @keyframes logoPulse {
+          0%,100% { filter: drop-shadow(0 0 8px #FF6B0055) drop-shadow(0 0 4px #FF3D6B33); }
+          50%      { filter: drop-shadow(0 0 22px #FF6B0088) drop-shadow(0 0 12px #FF3D6B66); }
+        }
+      `}</style>
     </div>
   )
 }
