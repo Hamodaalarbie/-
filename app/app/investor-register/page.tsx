@@ -213,15 +213,29 @@ export default function HomePage() {
           }}>{lang==="ar"?"دخول":"Sign In"}</button>
         </div>
       </nav>
-<p
-  style={{
-    textAlign:"center",
-    margin:"20px 0"
-  }}
->
-
-{lang==="ar"?"سجّل الآن وابدأ رحلتك الرقمية مع عرباوي":"Register now and start your digital journey with Arabaawy"}
-          </p>
+{/* ══════ HERO ══════ */}
+      <section style={{ minHeight:"100vh", display:"flex", flexDirection:"column",
+        alignItems:"center", justifyContent:"center", padding:"80px 24px 60px",
+        position:"relative", overflow:"hidden", textAlign:"center" }}>
+        <div style={{ position:"absolute", inset:0, pointerEvents:"none",
+          backgroundImage:`radial-gradient(circle, ${T.isDark?"#ffffff08":"#00000006"} 1px, transparent 1px)`,
+          backgroundSize:"30px 30px" }}/>
+        <div style={{ marginBottom:32 }}>
+          <Logo size="lg" scheme="gold" lang={lang}/>
+        </div>
+        <h1 style={{ fontSize:"clamp(28px,5vw,56px)", fontWeight:900, lineHeight:1.2, maxWidth:700, marginBottom:20 }}>
+          <span style={{ background:"linear-gradient(135deg,#f59e0b,#f97316)",
+            WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>
+            {lang==="ar" ? "ابنِ مستقبلك الرقمي" : "Build Your Digital Future"}
+          </span>
+          <br/>
+          <span style={{ color:T.text }}>{lang==="ar" ? "معنا اليوم" : "With Us Today"}</span>
+        </h1>
+        <p style={{ fontSize:16, color:T.sub, maxWidth:520, lineHeight:1.8, marginBottom:40 }}>
+          {lang==="ar"
+            ? "سجّل الآن وابدأ رحلتك الرقمية مع عرباوي"
+            : "Register now and start your digital journey with Arabaawy"}
+        </p>
         <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
           <button onClick={()=>{ setRegTab("investor"); setModal("register"); setRStep(1); setRDone(false) }}
             style={{ padding:"13px 32px", borderRadius:12, border:"none",
@@ -238,7 +252,7 @@ export default function HomePage() {
             {lang==="ar"?"سجّل كشريك":"Register as Partner"}
           </button>
         </div>
-     );
+      </section>
 
       {/* ══════ FOOTER ══════ */}
       <footer style={{ padding:"24px", textAlign:"center",
@@ -255,7 +269,6 @@ export default function HomePage() {
           style={{ position:"fixed", inset:0, zIndex:200,
             background:"rgba(0,0,0,0.8)", backdropFilter:"blur(12px)",
             display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-
           <div className="animate-scaleIn" style={{
             width:"100%", maxWidth: modal==="register" ? 440 : 390,
             background:T.card, border:`1.5px solid ${accent}50`,
@@ -266,7 +279,6 @@ export default function HomePage() {
             <div style={{ position:"absolute", top:0, left:"20%", right:"20%", height:2,
               background:`linear-gradient(90deg,transparent,${accent},${accent2},transparent)`,
               borderRadius:"0 0 6px 6px" }}/>
-
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
               <Logo size="xs" scheme={loginScheme} lang={lang}/>
               <button onClick={()=>setModal(null)} style={{
@@ -277,19 +289,310 @@ export default function HomePage() {
               }}><X size={14}/></button>
             </div>
 
-            {/* LOGIN / ADMIN */}
             {(modal==="login" || modal==="admin") && (
-              // ... (نفس ما سبق)
+              <div>
+                <h2 style={{ fontSize:17, fontWeight:900, color:T.text, marginBottom:4 }}>
+                  {modal==="admin" ? "🛡️ بوابة المدراء" : lang==="ar"?"تسجيل الدخول":"Sign In"}
+                </h2>
+                <p style={{ fontSize:12, color:T.sub, marginBottom:20 }}>
+                  {modal==="admin" ? "للمدراء والمشرفين فقط" : lang==="ar"?"أدخل بياناتك":"Enter your credentials"}
+                </p>
+                <div style={{ display:"flex", flexDirection:"column", gap:13 }}>
+                  <div>
+                    <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
+                      {lang==="ar"?"رمز الدخول":"Access Code"}
+                    </label>
+                    <div style={{ position:"relative" }}>
+                      <input type="text" value={lCode} placeholder={lang==="ar"?"أدخل رمزك":"Your code"}
+                        onChange={e=>setLCode(e.target.value)}
+                        onKeyDown={e=>e.key==="Enter"&&doLogin(modal==="admin")}
+                        style={{ ...inp, padding:"11px 38px 11px 12px" }}
+                        onFocus={e=>(e.target.style.borderColor=accent)}
+                        onBlur={e=>(e.target.style.borderColor=T.border)}/>
+                      <KeyRound size={14} style={{ position:"absolute", top:"50%", right:12,
+                        transform:"translateY(-50%)", color:accent, pointerEvents:"none" }}/>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
+                      {lang==="ar"?"كلمة المرور":"Password"}
+                    </label>
+                    <div style={{ position:"relative" }}>
+                      <input type={lShow?"text":"password"} value={lPass}
+                        placeholder={lang==="ar"?"كلمة المرور":"Password"}
+                        onChange={e=>setLPass(e.target.value)}
+                        onKeyDown={e=>e.key==="Enter"&&doLogin(modal==="admin")}
+                        style={{ ...inp, padding:"11px 38px 11px 38px" }}
+                        onFocus={e=>(e.target.style.borderColor=accent)}
+                        onBlur={e=>(e.target.style.borderColor=T.border)}/>
+                      <Lock size={14} style={{ position:"absolute", top:"50%", right:12,
+                        transform:"translateY(-50%)", color:accent, pointerEvents:"none" }}/>
+                      <button type="button" onClick={()=>setLShow(s=>!s)} style={{
+                        position:"absolute", top:"50%", left:10, transform:"translateY(-50%)",
+                        background:"none", border:"none", color:T.sub, cursor:"pointer", padding:0, display:"flex" }}>
+                        {lShow?<EyeOff size={14}/>:<Eye size={14}/>}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ textAlign:"left", margin:"10px 0 16px" }}>
+                  <button onClick={()=>router.push("/recovery")} style={{
+                    background:"none", border:"none", fontSize:11.5,
+                    color:accent, cursor:"pointer", fontFamily:"Cairo,Tajawal,sans-serif" }}>
+                    {lang==="ar"?"نسيت كلمة المرور؟":"Forgot password?"}
+                  </button>
+                </div>
+                {lErr && (
+                  <div style={{ marginBottom:14, padding:"9px 13px", borderRadius:9,
+                    fontSize:13, textAlign:"center", color:"#f87171",
+                    background:"#f8717115", border:"1px solid #f8717130" }}>{lErr}</div>
+                )}
+                <button onClick={()=>doLogin(modal==="admin")} disabled={lLoad} style={{
+                  width:"100%", height:46, borderRadius:11, border:"none",
+                  cursor: lLoad?"not-allowed":"pointer", fontSize:14, fontWeight:800,
+                  fontFamily:"Cairo,Tajawal,sans-serif",
+                  background: lLoad ? T.muted : `linear-gradient(135deg,${accent},${accent2})`,
+                  color: T.isDark ? "#000" : "#fff", transition:"all .2s",
+                }}>
+                  {lLoad ? "..." : lang==="ar"?"دخول →":"Sign In →"}
+                </button>
+                {modal==="login" && (
+                  <p style={{ textAlign:"center", marginTop:16, fontSize:12.5, color:T.sub }}>
+                    {lang==="ar"?"ليس لديك حساب؟ ":"No account? "}
+                    <button onClick={()=>{ setModal("register"); setRStep(1); setRDone(false) }} style={{
+                      background:"none", border:"none", color:accent, fontWeight:800,
+                      cursor:"pointer", fontSize:12.5, fontFamily:"Cairo,Tajawal,sans-serif" }}>
+                      {lang==="ar"?"سجّل الآن":"Register"}
+                    </button>
+                  </p>
+                )}
+              </div>
             )}
 
-            {/* REGISTER */}
             {modal==="register" && (
-              // STEP 1: الاسم + الهاتف + (هوية أو قسم)
-              // STEP 2: كلمة المرور + تأكيدها + PwBar
-              // STEP 3: سؤال الأمان + الإجابة + doRegister()
-              // DONE:   عرض رمز الدخول + نسخه
+              <div>
+                <h2 style={{ fontSize:16, fontWeight:900, color:T.text, marginBottom:16 }}>
+                  {lang==="ar"?"إنشاء حساب جديد":"Create Account"}
+                </h2>
+                {!rDone && (
+                  <div style={{ display:"flex", background:T.surface, border:`1px solid ${T.border}`,
+                    borderRadius:12, padding:3, marginBottom:20, gap:4 }}>
+                    {([
+                      { id:"partner" as const, label:lang==="ar"?"🤝 شريك":"🤝 Partner", c:ROLE_COLORS.partner },
+                      { id:"investor" as const, label:lang==="ar"?"📈 مستثمر":"📈 Investor", c:ROLE_COLORS.investor },
+                    ]).map(({ id, label, c }) => (
+                      <button key={id} onClick={()=>{ setRegTab(id); setRStep(1); setRErr("") }} style={{
+                        flex:1, padding:"9px 6px", borderRadius:9, border:"none",
+                        fontWeight:700, fontSize:13, fontFamily:"Cairo,Tajawal,sans-serif", cursor:"pointer",
+                        background: regTab===id ? `linear-gradient(135deg,${c.a},${c.b})` : "transparent",
+                        color: regTab===id ? "#fff" : T.sub, transition:"all .2s",
+                      }}>{label}</button>
+                    ))}
+                  </div>
+                )}
+                {!rDone && (
+                  <div style={{ display:"flex", gap:6, marginBottom:22 }}>
+                    {[1,2,3].map(s => (
+                      <div key={s} style={{ flex:1, height:4, borderRadius:99,
+                        background: s<=rStep ? `linear-gradient(90deg,${RC.a},${RC.b})` : T.muted,
+                        transition:"background .3s" }}/>
+                    ))}
+                  </div>
+                )}
+                {rDone && (
+                  <div style={{ textAlign:"center", padding:"10px 0" }}>
+                    <div style={{ fontSize:52, marginBottom:12 }}>{regTab==="partner"?"🤝":"💼"}</div>
+                    <h3 style={{ fontSize:18, fontWeight:900, color:T.text, marginBottom:8 }}>
+                      {lang==="ar"?"تم إنشاء حسابك!":"Account Created!"}
+                    </h3>
+                    <div style={{ padding:"14px 16px", borderRadius:12,
+                      background:`${RC.a}10`, border:`1px solid ${RC.a}30`, marginBottom:20 }}>
+                      <p style={{ fontSize:11, color:T.sub, marginBottom:8 }}>{lang==="ar"?"رمز الدخول":"Access Code"}</p>
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
+                        <span style={{ fontSize:22, fontWeight:900, color:RC.a, letterSpacing:"0.08em" }}>{rCode}</span>
+                        <button onClick={()=>{ navigator.clipboard.writeText(rCode); setRCopied(true); setTimeout(()=>setRCopied(false),2000) }}
+                          style={{ background:`${RC.a}15`, border:`1px solid ${RC.a}40`, borderRadius:8,
+                            padding:"6px 10px", cursor:"pointer", display:"flex", alignItems:"center",
+                            gap:5, color:RC.a, fontSize:11, fontWeight:700, fontFamily:"Cairo,Tajawal,sans-serif" }}>
+                          {rCopied ? <><Check size={12}/>{lang==="ar"?"نُسخ":"Copied"}</> : <><Copy size={12}/>{lang==="ar"?"نسخ":"Copy"}</>}
+                        </button>
+                      </div>
+                    </div>
+                    <button onClick={()=>setModal(null)} style={{
+                      width:"100%", height:44, borderRadius:11, border:"none",
+                      background:`linear-gradient(135deg,${RC.a},${RC.b})`,
+                      color:"#fff", fontWeight:800, fontSize:14,
+                      fontFamily:"Cairo,Tajawal,sans-serif", cursor:"pointer" }}>
+                      {lang==="ar"?"الدخول للمنصة →":"Enter Platform →"}
+                    </button>
+                  </div>
+                )}
+                {!rDone && rStep===1 && (
+                  <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                    <div>
+                      <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
+                        {lang==="ar"?"الاسم الكامل":"Full Name"}
+                      </label>
+                      <input style={inp} placeholder={lang==="ar"?"محمد أحمد":"John Doe"} value={rName}
+                        onChange={e=>setRName(e.target.value)}
+                        onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}/>
+                    </div>
+                    <div>
+                      <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
+                        {lang==="ar"?"رقم الهاتف":"Phone"}
+                      </label>
+                      <input style={inp} placeholder="01xxxxxxxxx" type="tel" value={rPhone}
+                        onChange={e=>setRPhone(e.target.value)}
+                        onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}/>
+                    </div>
+                    {regTab==="investor" && (
+                      <div>
+                        <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
+                          {lang==="ar"?"رقم الهوية":"National ID"}
+                        </label>
+                        <input style={inp} placeholder="14 رقم" value={rNatId}
+                          onChange={e=>setRNatId(e.target.value)}
+                          onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}/>
+                      </div>
+                    )}
+                    {regTab==="partner" && (
+                      <div>
+                        <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
+                          {lang==="ar"?"القسم":"Department"}
+                        </label>
+                        <select style={{ ...inp, cursor:"pointer" }} value={rDept} onChange={e=>setRDept(e.target.value)}
+                          onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}>
+                          <option value="">{lang==="ar"?"-- اختر قسمك --":"-- Select --"}</option>
+                          {DEPARTMENTS.map(d=>(
+                            <option key={d.code} value={d.code} style={{ background:T.card }}>
+                              {d.name} ({d.code})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    {rErr && <p style={{ color:"#f87171", fontSize:12, textAlign:"center" }}>{rErr}</p>}
+                    <button onClick={()=>{
+                      setRErr("")
+                      if (!rName.trim()) { setRErr("أدخل الاسم"); return }
+                      if (!rPhone.trim()) { setRErr("أدخل الهاتف"); return }
+                      if (regTab==="investor" && !rNatId.trim()) { setRErr("أدخل رقم الهوية"); return }
+                      if (regTab==="partner" && !rDept) { setRErr("اختر القسم"); return }
+                      setRStep(2)
+                    }} style={{
+                      width:"100%", height:44, borderRadius:11, border:"none",
+                      background:`linear-gradient(135deg,${RC.a},${RC.b})`,
+                      color:"#fff", fontWeight:800, fontSize:14,
+                      fontFamily:"Cairo,Tajawal,sans-serif", cursor:"pointer" }}>
+                      {lang==="ar"?"التالي →":"Next →"}
+                    </button>
+                  </div>
+                )}
+                {!rDone && rStep===2 && (
+                  <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                    <div>
+                      <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
+                        {lang==="ar"?"كلمة المرور":"Password"}
+                      </label>
+                      <div style={{ position:"relative" }}>
+                        <input type={rShow?"text":"password"} style={{ ...inp, paddingLeft:36 }}
+                          placeholder={lang==="ar"?"6 أحرف على الأقل":"Min 6 chars"} value={rPw}
+                          onChange={e=>setRPw(e.target.value)}
+                          onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}/>
+                        <button type="button" onClick={()=>setRShow(s=>!s)} style={{
+                          position:"absolute", top:"50%", left:10, transform:"translateY(-50%)",
+                          background:"none", border:"none", color:T.sub, cursor:"pointer", padding:0, display:"flex" }}>
+                          {rShow?<EyeOff size={14}/>:<Eye size={14}/>}
+                        </button>
+                      </div>
+                      <PwBar pw={rPw} sub={T.sub}/>
+                    </div>
+                    <div>
+                      <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
+                        {lang==="ar"?"تأكيد كلمة المرور":"Confirm Password"}
+                      </label>
+                      <input type="password" style={inp} placeholder={lang==="ar"?"أعد الكتابة":"Repeat"} value={rPw2}
+                        onChange={e=>setRPw2(e.target.value)}
+                        onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}/>
+                    </div>
+                    {rErr && <p style={{ color:"#f87171", fontSize:12, textAlign:"center" }}>{rErr}</p>}
+                    <div style={{ display:"flex", gap:8 }}>
+                      <button onClick={()=>setRStep(1)} style={{
+                        flex:1, height:44, borderRadius:11,
+                        border:`1px solid ${T.border}`, background:"transparent",
+                        color:T.sub, cursor:"pointer", fontWeight:700,
+                        fontFamily:"Cairo,Tajawal,sans-serif" }}>
+                        {lang==="ar"?"رجوع":"Back"}
+                      </button>
+                      <button onClick={()=>{
+                        setRErr("")
+                        if (rPw.length<6) { setRErr("6 أحرف على الأقل"); return }
+                        if (rPw!==rPw2) { setRErr("كلمتا المرور غير متطابقتين"); return }
+  setRStep(3)
+                      }} style={{
+                        flex:2, height:44, borderRadius:11, border:"none",
+                        background:`linear-gradient(135deg,${RC.a},${RC.b})`,
+                        color:"#fff", fontWeight:800, fontSize:14,
+                        fontFamily:"Cairo,Tajawal,sans-serif", cursor:"pointer" }}>
+                        {lang==="ar"?"التالي →":"Next →"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {!rDone && rStep===3 && (
+                  <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                    <div>
+                      <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
+                        {lang==="ar"?"سؤال الأمان":"Security Question"}
+                      </label>
+                      <select style={{ ...inp, cursor:"pointer" }} value={rSecQ} onChange={e=>setRSecQ(e.target.value)}
+                        onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}>
+                        {SECURITY_QUESTIONS.map(q=>(
+                          <option key={q} value={q} style={{ background:T.card }}>{q}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize:11, fontWeight:700, color:T.sub, display:"block", marginBottom:6 }}>
+                        {lang==="ar"?"الإجابة":"Answer"}
+                      </label>
+                      <input style={inp} placeholder={lang==="ar"?"إجابتك السرية":"Your secret answer"} value={rSecA}
+                        onChange={e=>setRSecA(e.target.value)}
+                        onFocus={e=>(e.target.style.borderColor=RC.a)} onBlur={e=>(e.target.style.borderColor=T.border)}/>
+                    </div>
+                    {regTab==="investor" && (
+                      <div style={{ padding:"10px 12px", borderRadius:10,
+                        background:`${RC.a}0a`, border:`1px solid ${RC.a}25` }}>
+                        <p style={{ fontSize:11, color:T.sub, margin:0, lineHeight:1.7 }}>
+                          🏦 {lang==="ar"?"سيتم إنشاء محفظة رقمية خاصة بك فور التسجيل":"A digital wallet will be created upon registration"}
+                        </p>
+                      </div>
+                    )}
+                    {rErr && <p style={{ color:"#f87171", fontSize:12, textAlign:"center" }}>{rErr}</p>}
+                    <div style={{ display:"flex", gap:8 }}>
+                      <button onClick={()=>setRStep(2)} style={{
+                        flex:1, height:44, borderRadius:11,
+                        border:`1px solid ${T.border}`, background:"transparent",
+                        color:T.sub, cursor:"pointer", fontWeight:700,
+                        fontFamily:"Cairo,Tajawal,sans-serif" }}>
+                        {lang==="ar"?"رجوع":"Back"}
+                      </button>
+                      <button onClick={()=>{
+                        if (!rSecA.trim()) { setRErr("أدخل إجابة سؤال الأمان"); return }
+                        doRegister()
+                      }} disabled={rLoad} style={{
+                        flex:2, height:44, borderRadius:11, border:"none",
+                        cursor: rLoad?"not-allowed":"pointer",
+                        background: rLoad ? T.muted : `linear-gradient(135deg,${RC.a},${RC.b})`,
+                        color:"#fff", fontWeight:800, fontSize:14,
+                        fontFamily:"Cairo,Tajawal,sans-serif" }}>
+                        {rLoad ? "..." : lang==="ar"?"إنشاء الحساب →":"Create Account →"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
-
           </div>
         </div>
       )}
