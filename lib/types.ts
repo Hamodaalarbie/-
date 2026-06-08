@@ -191,3 +191,51 @@ export interface PartnerRequest {
   code: string | null
   createdAt: string
 }
+export const SECURITY_QUESTIONS = [
+  "ما هو اسم مدرستك الابتدائية؟",
+  "ما هو اسم أول حيوان أليف امتلكته؟",
+  "ما هي مدينة ميلادك؟",
+  "ما هو اسم أفضل صديق لك في الطفولة؟",
+]
+
+export const DEPARTMENTS = [
+  { code: "WEB", name: "تطوير الويب", category: "تقني" },
+  { code: "CDR", name: "تطوير المحتوى", category: "إبداعي" },
+  { code: "DMK", name: "التسويق الرقمي", category: "تسويق" },
+  { code: "GRD", name: "الجرافيك والتصميم", category: "تصميم" },
+  { code: "SMM", name: "إدارة السوشيال ميديا", category: "تسويق" },
+  { code: "SEO", name: "تحسين محركات البحث", category: "تسويق" },
+  { code: "SAL", name: "المبيعات", category: "تسويق" },
+  { code: "OPS", name: "العمليات", category: "إدارة" },
+]
+
+export const RANK_CONFIG: Record<string, { label: string; bg: string; text: string; icon: string }> = {
+  iron:    { label: "حديد",  bg: "bg-gray-700",   text: "text-gray-400",   icon: "🛡️" },
+  bronze:  { label: "برونز", bg: "bg-amber-900",  text: "text-amber-400",  icon: "⚡" },
+  silver:  { label: "فضي",   bg: "bg-blue-900",   text: "text-blue-300",   icon: "⭐" },
+  gold:    { label: "ذهبي",  bg: "bg-yellow-900", text: "text-yellow-400", icon: "🏆" },
+  platinum:{ label: "بلاتين",bg: "bg-indigo-900", text: "text-indigo-400", icon: "💎" },
+  royal:   { label: "ملكي",  bg: "bg-purple-900", text: "text-purple-400", icon: "👑" },
+}
+
+export type AppUser = User
+export type UserRank = string
+export interface Settings {
+  id: string
+  share_price_per_point: number
+  points_per_share: number
+  trading_enabled: boolean
+  market_enabled: boolean
+  min_withdrawal_points: number
+  announcement: string | null
+  updated_at: string
+}
+export interface Notification {
+  id: string
+  target_user_id: string | null
+  title: string
+  description: string | null
+  is_read: boolean
+  target_all: boolean
+  created_at: string
+}
