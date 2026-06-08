@@ -1,206 +1,193 @@
-export type UserRole = "partner" | "admin" | "investor"
-export type UserRank = "iron" | "bronze" | "silver" | "gold" | "diamond" | "royal"
-export type TaskStatus = "Pending" | "Approved" | "Rejected"
-export type ProjectStatus = "active" | "scaling" | "closed"
-export type RequestType = "Task" | "Withdrawal" | "Project" | "ShareSale" | "SharePurchase" | "RankUpgrade"
-export type ListingType = "sell_to_company" | "sell_to_investor" | "advertise"
+export type Role = 'admin' | 'investor' | 'partner'
+export type RequestStatus = 'pending' | 'approved' | 'rejected'
+export type TxType = 'buy' | 'sell' | 'deposit' | 'withdraw' | 'distribution'
+export type ProductStatus = 'active' | 'frozen' | 'completed'
 
-export interface AppUser {
+export interface User {
   id: string
   name: string
   phone: string
+  nationalId: string
   code: string
   password: string
-  role: UserRole
+  role: Role
+  rank: string
   dept: string | null
-  rank: UserRank
   points: number
   shares: number
-  security_question: string | null
-  security_answer: string | null
-  created_at: string
+  wallet: number
+  status: RequestStatus
+  securityQuestion: string | null
+  securityAnswer: string | null
+  portfolioUrl: string | null
+  portfolioFiles: string[]
+  createdAt: string
 }
 
-export interface Task {
+export interface Service {
   id: string
-  title: string
-  dept: string
-  brief: string | null
-  full_report: string | null
-  conditions: string | null
-  reward_points: number
-  count: number
-  limit: number
-  file_url: string | null
-  external_link: string | null
-  created_at: string
+  titleAr: string
+  titleEn: string
+  descAr: string
+  descEn: string
+  icon: string
+  imageUrl: string
+  videoUrl: string | null
+  columns: { labelAr: string; labelEn: string; valueAr: string; valueEn: string }[]
+  order: number
+  active: boolean
 }
 
 export interface Project {
   id: string
-  title_ar: string
-  title_en: string
-  description: string | null
-  profit_target: string | null
-  member_count: number
-  status: ProjectStatus
-  required_depts: string[] | null
-  roadmap: RoadmapPhase[] | null
-  cover_image: string | null
+  titleAr: string
+  titleEn: string
+  descAr: string
+  descEn: string
   progress: number
-  category: string | null
-  total_shares: number
-  available_shares: number
-  share_price_egp: number
-  created_at: string
+  investorsCount: number
+  tag: string
+  imageUrl: string
+  active: boolean
 }
 
-export interface RoadmapPhase {
-  phase: string
-  status: "done" | "in_progress" | "pending"
-}
-
-export interface PendingRequest {
+export interface Share {
   id: string
-  user_id: string
-  type: RequestType
-  points_amount: number | null
-  method: string | null
-  wallet_details: string | null
-  submission_link: string | null
-  report_text: string | null
-  reward_points: number | null
-  task_title: string | null
-  task_id: string | null
-  project_id: string | null
-  status: TaskStatus
-  created_at: string
-  users?: AppUser
-  tasks?: Task
-  projects?: Project
+  name: string
+  price: number
+  total: number
+  available: number
+  buyEnabled: boolean
+  sellEnabled: boolean
+  published: boolean
 }
 
-export interface Notification {
+export interface FinancialProduct {
   id: string
-  target_user_id: string | null
-  title: string
-  description: string | null
-  is_read: boolean
-  target_all: boolean
-  created_at: string
+  nameAr: string
+  nameEn: string
+  descAr: string
+  descEn: string
+  returnRate: number
+  minInvest: number
+  status: ProductStatus
+  active: boolean
+}
+
+export interface Transaction {
+  id: string
+  userId: string
+  type: TxType
+  amount: number
+  date: string
+  notes: string
+  status?: RequestStatus
+}
+
+export interface Level {
+  id: string
+  nameAr: string
+  nameEn: string
+  minPoints: number
+  requirementsAr: string
+  requirementsEn: string
+  color: string
+  icon: string
 }
 
 export interface PromoCode {
   id: string
   code: string
-  points_value: number
-  max_uses: number
-  used_count: number
-  created_at: string
+  discount: number
+  uses: number
+  maxUses: number
+  active: boolean
 }
 
-export interface ShareListing {
+export interface Department {
   id: string
-  seller_id: string
-  project_id: string
-  shares_count: number
-  price_per_share: number
-  listing_type: ListingType
-  status: "active" | "sold" | "cancelled"
-  created_at: string
-  users?: AppUser
-  projects?: Project
+  code: string
+  name: string
+  capacity: number
+  currentCount: number
+  active: boolean
 }
 
-export interface Meeting {
+export interface SiteContent {
+  welcomeAr: string
+  welcomeEn: string
+  heroTitleAr: string
+  heroTitleEn: string
+  heroSubAr: string
+  heroSubEn: string
+  clientPortalAr: string
+  clientPortalEn: string
+}
+
+export interface InvestorRequest {
   id: string
-  title: string
-  description: string | null
-  date_time: string | null
-  attendees: string[] | null
-  status: "scheduled" | "done" | "cancelled"
-  created_at: string
+  name: string
+  phone: string
+  nationalId: string
+  portfolioUrl: string
+  portfolioFiles: string[]
+  securityQuestion: string
+  status: RequestStatus
+  code: string | null
+  createdAt: string
 }
 
-export interface NewsItem {
+export interface Task {
   id: string
-  title: string
-  content: string | null
-  image_url: string | null
-  published_at: string | null
-  is_published: boolean
-  created_at: string
+  titleAr: string
+  titleEn: string
+  descAr: string
+  descEn: string
+  rewardPoints: number
+  deadline: string
+  assignedTo: 'all' | string
+  active: boolean
 }
 
-export interface AdminLog {
+export interface TaskSubmission {
   id: string
-  admin_id: string | null
-  action: string
-  details: string | null
-  created_at: string
-  users?: AppUser
+  taskId: string
+  partnerId: string
+  partnerName: string
+  submissionUrl: string
+  submissionNote: string
+  status: 'pending' | 'approved' | 'rejected'
+  submittedAt: string
 }
 
-export interface Settings {
+export interface ChatMessage {
   id: string
-  share_price_per_point: number
-  points_per_share: number
-  trading_enabled: boolean
-  market_enabled: boolean
-  min_withdrawal_points: number
-  announcement: string | null
-  updated_at: string
+  fromId: string
+  fromName: string
+  fromRole: Role
+  toId: string
+  body: string
+  createdAt: string
+  read: boolean
 }
 
-export interface Transaction {
+export interface ContactLinks {
+  telegramPartner: string
+  telegramLanding: string
+  whatsappPartner: string
+  whatsappLanding: string
+}
+
+export interface PartnerRequest {
   id: string
-  user_id: string
-  type: string
-  amount: number
-  date: string
-  status: string
-  note: string | null
+  name: string
+  phone: string
+  nationalId: string
+  departments: string[]
+  portfolioUrl: string
+  portfolioFiles: string[]
+  securityQuestion: string
+  status: RequestStatus
+  code: string | null
+  createdAt: string
 }
-
-export const DEPARTMENTS: { code: string; name: string; category: string }[] = [
-  { code: "GEN", name: "إدارة عامة", category: "إدارة" },
-  { code: "CTO", name: "التقنية والابتكار", category: "تقني" },
-  { code: "FSD", name: "تطوير كامل المكدس", category: "تقني" },
-  { code: "WEB", name: "تطوير الويب", category: "تقني" },
-  { code: "ECM", name: "التجارة الإلكترونية", category: "تقني" },
-  { code: "OPS", name: "العمليات", category: "إدارة" },
-  { code: "ARC", name: "الهندسة المعمارية", category: "تقني" },
-  { code: "CDR", name: "تطوير المحتوى", category: "إبداعي" },
-  { code: "UIX", name: "تجربة المستخدم", category: "تصميم" },
-  { code: "GRD", name: "الجرافيك والتصميم", category: "تصميم" },
-  { code: "WDS", name: "تصميم المواقع", category: "تصميم" },
-  { code: "BVI", name: "هوية العلامة", category: "تصميم" },
-  { code: "MOT", name: "الموشن جرافيك", category: "تصميم" },
-  { code: "DMK", name: "التسويق الرقمي", category: "تسويق" },
-  { code: "SEO", name: "تحسين محركات البحث", category: "تسويق" },
-  { code: "CNT", name: "كتابة المحتوى", category: "تسويق" },
-  { code: "SMM", name: "إدارة السوشيال ميديا", category: "تسويق" },
-  { code: "SAL", name: "المبيعات", category: "تسويق" },
-  { code: "CRM", name: "علاقات العملاء", category: "إدارة" },
-  { code: "PJM", name: "إدارة المشاريع", category: "إدارة" },
-  { code: "PDS", name: "تطوير المنتج", category: "إدارة" },
-  { code: "SUP", name: "الدعم الفني", category: "إدارة" },
-  { code: "TSP", name: "الترجمة والتعريب", category: "إبداعي" },
-  { code: "CSV", name: "خدمة المجتمع", category: "إبداعي" },
-]
-
-export const RANK_CONFIG: Record<UserRank, { label: string; bg: string; text: string; icon: string }> = {
-  iron:    { label: "حديد",  bg: "bg-gray-700",    text: "text-gray-400",   icon: "🛡️" },
-  bronze:  { label: "برونز", bg: "bg-amber-900",   text: "text-amber-400",  icon: "⚡" },
-  silver:  { label: "فضي",   bg: "bg-blue-900",    text: "text-blue-300",   icon: "⭐" },
-  gold:    { label: "ذهبي",  bg: "bg-yellow-900",  text: "text-yellow-400", icon: "🏆" },
-  diamond: { label: "ماسي",  bg: "bg-indigo-900",  text: "text-indigo-400", icon: "💎" },
-  royal:   { label: "ملكي",  bg: "bg-purple-900",  text: "text-purple-400", icon: "👑" },
-}
-
-export const SECURITY_QUESTIONS = [
-  "ما هو اسم مدرستك الابتدائية؟",
-  "ما هو اسم أول حيوان أليف امتلكته؟",
-  "ما هي مدينة ميلادك؟",
-  "ما هو اسم أفضل صديق لك في الطفولة؟",
-]
