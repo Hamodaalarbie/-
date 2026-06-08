@@ -1,11 +1,24 @@
-import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
-import { AppProvider } from '@/lib/context'
+import type { Metadata } from 'next'
+import { Cairo, Inter, Geist_Mono } from 'next/font/google'
 import './globals.css'
+import { Providers } from '@/components/providers'
+
+const cairo = Cairo({
+  variable: '--font-cairo',
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '600', '700', '800', '900'],
+})
+const inter = Inter({ variable: '--font-inter', subsets: ['latin'] })
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+})
 
 export const metadata: Metadata = {
-  title: 'Arabaawy | عرباوي',
-  description: 'النظام البيئي الرقمي للعمل والاستثمار',
+  title: 'عرباوي | Arabaawy — منصة الاستثمار والشراكة',
+  description:
+    'منصة عرباوي للاستثمار والشراكة — استثمر، اشترك، وكن جزءاً من المشاريع الناجحة.',
   generator: 'v0.app',
 }
 
@@ -15,19 +28,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ar" dir="rtl" className="bg-[#0a0a0a]">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body style={{ fontFamily: "'Tajawal', sans-serif" }}>
-        <AppProvider>
-          {children}
-        </AppProvider>
+    <html
+      lang="ar"
+      dir="rtl"
+      suppressHydrationWarning
+      className={`dark ${cairo.variable} ${inter.variable} ${geistMono.variable} bg-background`}
+    >
+      <body className="font-sans antialiased">
+        <Providers>{children}</Providers>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
